@@ -111,6 +111,9 @@ html, body { overflow-x: hidden; }
 .share { display: flex; gap: 16px; align-items: center; }
 .share img { width: 132px; height: 132px; border-radius: 12px; background: #fff; flex: none; }
 .share p { font-size: 14px; color: var(--muted); }
+.mini.pick.on { background: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.chip { padding: 8px 12px; border-radius: 20px; background: var(--card2); font-size: 14px; }
 .send.danger { background: #c62f45; }
 .tvsays { font-size: 13px; background: rgba(139, 107, 255, 0.15); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
 </style>
@@ -154,6 +157,9 @@ html, body { overflow-x: hidden; }
     var KIDS = [{ id: 'milan', name: 'Milan' }, { id: 'willo', name: 'Willo' }, { id: 'rogan', name: 'Rogan' }];
     var OPTS = [['turns', 'Tour de rôle « qui choisit »'], ['seasonal', 'Décorations de saison'], ['world', 'Décor qui grandit avec le niveau']];
     var PEOPLE = KIDS.concat([{ id: 'al', name: 'Al' }, { id: '3ldri', name: '3ldri' }]);
+    var PARENTS = [{ id: 'al', name: 'Al' }, { id: '3ldri', name: '3ldri' }];
+    var CHEERS = ['Je suis fier de toi !', 'Bravo pour tes efforts !', 'Tu es génial, continue !', 'Bonne journée mon champion !', 'Je t’aime fort ❤', 'Courage pour ton contrôle !'];
+    var sender = store('grumeaux.sender') || 'al';
     var TABS = KIDS.concat([{ id: 'tous', name: 'Tous' }, { id: 'gestion', name: 'Gestion' }]);
 
     var topic = '', state = null, current = 'milan', customN = 1, questN = 2, refreshTimer = null, pendingOpts = {};
@@ -303,7 +309,7 @@ html, body { overflow-x: hidden; }
         if (state && state.last && Date.now() - state.last.t < 5 * 60000) html += '<div class="tvsays">📺 ' + esc(state.last.msg) + '</div>';
         html += current === 'gestion' ? manageView() : kidView(current);
         var keep = {};
-        ['reason', 'questText', 'msgText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
+        ['reason', 'questText', 'msgText', 'visitText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
         $('view').innerHTML = html;
         Object.keys(keep).forEach(function (id) { if ($(id)) $(id).value = keep[id]; });
     }
@@ -351,6 +357,15 @@ html, body { overflow-x: hidden; }
             return '<button class="chest" data-cmd="' + who + ' coffre ' + c[0] + '" style="color:' + c[2] + '"><i></i><span style="color:var(--text)">' + c[1] + '</span>' +
                 (k ? '<small>en stock : ' + (k.chests[c[0]] || 0) + '</small>' : '') + '</button>';
         }).join('') + '</div></section>';
+
+        // Passage d'un parent : son héros traverse l'écran de l'enfant et s'arrête pour dire le message
+        html += '<section><h2>Petit mot d’un parent</h2><div class="btns">' + PARENTS.map(function (p) {
+            return '<button class="mini pick' + (p.id === sender ? ' on' : '') + '" data-sender="' + p.id + '">De ' + esc(p.name) + '</button>';
+        }).join('') + '</div><div class="chips">' + CHEERS.map(function (c) { return '<button class="chip" data-cheer="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' +
+            '<div class="field"><textarea id="visitText" placeholder="Ton petit mot d’encouragement" maxlength="120"></textarea></div>' +
+            '<div class="row2"><button class="send" id="visitSend">Envoyer le passage</button></div>' +
+            '<p class="hint">Ton héros passera sur l’écran de ' + (id === 'tous' ? 'chaque enfant' : esc(nameOf(id))) + ' et s’arrêtera pour dire ton message' +
+            (k && k.visits ? ' · <b>' + k.visits + ' en attente</b>' : '') + '.</p></section>';
 
         html += '<section><h2>Message sur la TV</h2><div class="field"><textarea id="msgText" placeholder="Ex. : Bravo pour ton bulletin !" maxlength="140"></textarea></div>' +
             '<div class="row2"><button class="send" id="msgSend">Envoyer à ' + (id === 'tous' ? 'tous' : esc(nameOf(id))) + '</button></div></section>';
@@ -452,6 +467,22 @@ html, body { overflow-x: hidden; }
             if (isNaN(v) || v < 0) { toast('Entre un nombre d’étoiles'); return; }
             if (!confirm('Mettre ' + nameOf(kidStars) + ' à ' + v + ' étoiles ?')) return;
             send(kidStars + ' etoiles ' + v);
+            return;
+        }
+        var snd = b.getAttribute('data-sender');
+        if (snd) {
+            sender = snd;
+            store('grumeaux.sender', snd);
+            document.querySelectorAll('[data-sender]').forEach(function (x) { x.classList.toggle('on', x === b); });
+            return;
+        }
+        var ch = b.getAttribute('data-cheer');
+        if (ch) { $('visitText').value = ch; return; }
+        if (b.id === 'visitSend') {
+            var vt = $('visitText').value.trim();
+            if (!vt) { toast('Écris d’abord ton petit mot'); return; }
+            send(current + ' passage ' + sender + ' ' + vt.replace(/s+/g, ' '));
+            $('visitText').value = '';
             return;
         }
         var reset = b.getAttribute('data-reset');
