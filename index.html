@@ -117,6 +117,20 @@ html, body { overflow-x: hidden; }
 .send.danger { background: #c62f45; }
 .lbl { font-size: 13px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
 .mini small { font-weight: 500; opacity: 0.75; }
+.dlc { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 16px; background: var(--card2); margin-top: 8px; }
+.dlcart { flex: none; width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 32px; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25); }
+.dlcinfo { flex: 1; min-width: 0; }
+.dlcinfo b { display: block; font-size: 16px; }
+.dlcinfo small { display: block; color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
+.dlced { margin-top: 14px; padding: 14px; border-radius: 18px; background: rgba(139, 107, 255, 0.1); border: 1px solid rgba(139, 107, 255, 0.35); }
+.dlccover { position: relative; overflow: hidden; height: 190px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px; text-align: center; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25); }
+.dlccover .big { font-size: 78px; line-height: 1; filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.3)); }
+.dlccover b { font-size: 22px; font-weight: 900; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45); }
+.dlccover .tag { position: absolute; top: 12px; right: -30px; transform: rotate(35deg); background: #ff3d6e; font-weight: 900; font-size: 12px; letter-spacing: 2px; padding: 4px 34px; }
+.emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+.emojis button { width: 44px; height: 44px; border-radius: 12px; font-size: 24px; background: var(--card2); }
+.emojis button.on { outline: 3px solid var(--gold); }
+.emojis button.sw { width: 36px; height: 36px; }
 .qmeta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 .wheel { position: relative; width: min(280px, 80vw); margin: 16px auto 6px; }
 .wheel svg { width: 100%; display: block; transition: transform 4s cubic-bezier(0.15, 0.7, 0.15, 1); }
@@ -124,7 +138,26 @@ html, body { overflow-x: hidden; }
 .wheel i { position: absolute; left: 50%; top: -8px; margin-left: -12px; z-index: 1; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 24px solid #fff; }
 .wheelres { text-align: center; font-size: 22px; font-weight: 800; color: var(--gold); min-height: 30px; }
 .send.alt { background: var(--card2); border: 1px solid var(--accent); }
+.revnums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.revnums div { background: var(--card2); border-radius: 14px; padding: 10px 6px; }
+.revnums b { display: block; font-size: 22px; color: var(--gold); }
+.revnums small { font-size: 12px; color: var(--muted); }
+.subj { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.sb { display: grid; grid-template-columns: 76px 1fr 92px; gap: 8px; align-items: center; font-size: 14px; }
+.sb i { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.sb em { display: block; height: 100%; background: var(--plus); border-radius: 6px; }
+.sb em.mid { background: var(--gold); }
+.sb em.lo { background: var(--minus); }
+.sb small { color: var(--muted); text-align: right; }
 .tvsays { font-size: 13px; background: rgba(139, 107, 255, 0.15); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
+.news { background: linear-gradient(135deg, rgba(139, 107, 255, 0.28), rgba(255, 170, 60, 0.18)); }
+.news h2 { display: flex; align-items: center; gap: 8px; }
+.news h2 em { font-style: normal; font-size: 11px; background: #ffb43c; color: #2a1a00; border-radius: 99px; padding: 2px 8px; }
+.cl { margin: 0 0 6px; }
+.cl summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.cl summary small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.cl ul, .news ul { margin: 4px 0 8px; padding-left: 20px; font-size: 14px; line-height: 1.45; }
+.cl li, .news li { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -174,6 +207,10 @@ html, body { overflow-x: hidden; }
 
     var topic = '', state = null, current = 'milan', customN = 1, questN = 2, refreshTimer = null, pendingOpts = {};
     var qFor = null, qTeam = [], qChef = '', qMin = 0;
+    // dates en cours de saisie (le rafraîchissement automatique ne doit pas les effacer) et dates envoyées
+    var bdEdit = {}, bdSaved = {}, lessons = [];
+    var LEVELS = [['auto', 'Selon l’âge'], ['1', 'CM1'], ['2', 'CM2 – 6e'], ['3', '5e – 4e']];
+    var SUBJ = [['maths', 'Maths'], ['francais', 'Français'], ['sciences', 'Sciences'], ['histoire', 'Histoire'], ['culture', 'Culture'], ['cartes', 'Leçons']];
     var wheelPeople = (store('grumeaux.roue') || 'milan,willo').split(',').filter(function (id) { return PEOPLE.some(function (p) { return p.id === id; }); });
     var wheelRot = 0, wheelSpinning = false, wheelResult = '';
     if (wheelPeople.length < 2) wheelPeople = ['milan', 'willo'];
@@ -204,8 +241,10 @@ html, body { overflow-x: hidden; }
         renderTabs();
         render();
         loadState();
+        loadLessons();
         send('sync', true);
         setInterval(loadState, 15000);
+        setInterval(loadLessons, 60000);
     }
 
     function showSetup() {
@@ -317,14 +356,48 @@ html, body { overflow-x: hidden; }
         return '<div class="stepper"><button data-step="' + id + '" data-d="-1">−</button><span id="' + id + '">' + (n > 0 && id === 'cn' ? '+' : '') + n + '</span><button data-step="' + id + '" data-d="1">+</button></div>';
     }
 
+    // Nouveautés : la plus récente en premier ; le bandeau reste affiché tant qu'elle n'a pas été lue
+    var CHANGELOG = [
+        { v: '2026-10-31', d: '31 octobre 2026', t: 'DLC, 8 thèmes et quiz fun', items: [
+            'Leçons & DLC : crée des packs de questions avec un titre fun (bouton 🎲), une image et une couleur. Sur la TV, ils apparaissent comme des boîtes de jeu avec le % de questions maîtrisées.',
+            'Import / export de fichiers : 📂 Importer un fichier .txt (une ligne « question | réponse ») ou .json, ⬇ Exporter un DLC ou tout, 📄 Fichier modèle prêt à remplir.',
+            '8 nouveaux thèmes : Nether, L’End, Kawaii, Hawaï, Lilo & Stitch, Animal Crossing, Mario et Bob l’éponge, avec décors animés, musiques, objets, montures et tenues légendaires.',
+            'Quiz culture & fun : pop culture, gaming, Minecraft ou tout mélangé, en plus du quiz du thème.',
+            'Pendu : nouvelles catégories « Jeux vidéo » et « Îles et océans ».'
+        ] },
+        { v: '2026-10-30', d: '30 octobre 2026', t: 'Révisions', items: [
+            'Révision du jour et série de jours révisés, duel entre frères, niveau réglable par enfant.',
+            'Nouveaux exercices : droite graduée, problèmes, natures de mots, frise chronologique, sciences, travaux d’Hercule et quiz du thème.',
+            'Leçons des parents : ajoute des questions depuis cette page, elles arrivent sur la TV.',
+            'Suivi des révisions de chaque enfant dans cette page.',
+            'Correction des dates qui s’affichaient mal.'
+        ] }
+    ];
+    var newsSeen = store('grumeaux.news') || '';
+
+    function changelogItems(c) { return '<ul>' + c.items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>'; }
+
+    function newsBanner() {
+        var c = CHANGELOG[0];
+        if (newsSeen >= c.v) return '';
+        return '<section class="news"><h2>Nouveautés <em>NOUVEAU</em></h2><p class="hint" style="margin:0">' + esc(c.d) + ' — ' + esc(c.t) + '</p>' +
+            changelogItems(c) + '<div class="row2"><button class="send" id="newsOk">J’ai vu</button></div></section>';
+    }
+
+    function changelogSection() {
+        return '<section><h2>Nouveautés</h2>' + CHANGELOG.map(function (c, i) {
+            return '<details class="cl"' + (i ? '' : ' open') + '><summary>' + esc(c.t) + '<small>' + esc(c.d) + '</small></summary>' + changelogItems(c) + '</details>';
+        }).join('') + '</section>';
+    }
+
     function render() {
         renderStatus();
         if (wheelSpinning) return;
-        var html = '';
+        var html = current === 'gestion' ? '' : newsBanner();
         if (state && state.last && Date.now() - state.last.t < 5 * 60000) html += '<div class="tvsays">📺 ' + esc(state.last.msg) + '</div>';
         html += current === 'gestion' ? manageView() : kidView(current);
         var keep = {};
-        ['reason', 'questText', 'msgText', 'visitText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
+        ['reason', 'questText', 'msgText', 'visitText', 'lessonQ', 'lessonA', 'dlcTitle', 'dlcSubject', 'dlcText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
         $('view').innerHTML = html;
         Object.keys(keep).forEach(function (id) { if ($(id)) $(id).value = keep[id]; });
     }
@@ -347,6 +420,7 @@ html, body { overflow-x: hidden; }
 
         if (id === 'tous') html += wheelSection();
         html += questSection(id, k);
+        html += revSection(id, k) + lessonSection(id);
 
         if (k) {
             html += '<section><h2>Défis de la semaine (+2 ★)</h2><div class="list">' + k.challenges.map(function (c, i) {
@@ -490,7 +564,7 @@ html, body { overflow-x: hidden; }
     }
 
     function manageView() {
-        var html = '<section><h2>Corrections</h2>';
+        var html = changelogSection() + '<section><h2>Corrections</h2>';
         KIDS.forEach(function (kid) {
             var k = kidState(kid.id);
             html += '<div class="mrow"><div class="top"><span>' + esc(kid.name) + '</span><small>' + (k ? '★ ' + k.stars : '') + '</small></div><div class="btns">' +
@@ -505,7 +579,10 @@ html, body { overflow-x: hidden; }
 
         html += '<section><h2>Anniversaires</h2>';
         PEOPLE.forEach(function (p) {
-            var cur = state && state.opts && state.opts.bd ? state.opts.bd[p.id] || '' : '', d = toIso(cur), age = ageOf(cur);
+            var cur = state && state.opts && state.opts.bd ? state.opts.bd[p.id] || '' : '';
+            // date envoyée mais pas encore confirmée par la TV : on l'affiche quand même
+            if (p.id in bdSaved) { if (bdSaved[p.id] === cur) delete bdSaved[p.id]; else cur = bdSaved[p.id]; }
+            var d = p.id in bdEdit ? bdEdit[p.id] : toIso(cur), age = ageOf(cur);
             html += '<div class="mrow"><div class="top"><span>' + esc(p.name) + '</span><small>' + (age !== null ? age + ' ans' : cur ? esc(cur) : 'non renseigné') + '</small></div>' +
                 '<div class="btns"><input type="date" class="date" id="bd-' + p.id + '" value="' + d + '"' + (state && state.opts ? '' : ' disabled') + '>' +
                 '<button class="mini ok" data-bd="' + p.id + '">Enregistrer</button></div></div>';
@@ -530,9 +607,312 @@ html, body { overflow-x: hidden; }
         return html;
     }
 
+    function keepDate(e) {
+        var id = e.target.id || '';
+        if (id.indexOf('bd-') === 0) bdEdit[id.slice(3)] = e.target.value;
+    }
+    $('view').addEventListener('input', keepDate);
+    $('view').addEventListener('change', keepDate);
+
+    // ---------- Révisions : suivi et leçons ----------
+
+    // La TV publie un index des DLC puis les questions de chaque DLC en morceaux (version v)
+    function loadLessons() {
+        fetch(NTFY + topic + '-lecons/json?poll=1&since=all').then(function (r) { return r.text(); }).then(function (txt) {
+            var msgs = [], index = null, cards = [];
+            txt.trim().split('\n').forEach(function (l) { try { var m = JSON.parse(l); if (m.event === 'message') msgs.push(JSON.parse(m.message)); } catch (e) { /* ligne ignorée */ } });
+            msgs.forEach(function (b) { if (b.kind === 'index' && (!index || b.t >= index.t)) index = b; });
+            if (!index) return;
+            packs = index.packs.map(function (a) {
+                var p = { id: a[0], who: a[1], img: a[2], color: a[3], title: a[4], v: a[5] }, parts = {}, of = 0;
+                msgs.forEach(function (b) { if (b.kind === 'pack' && b.id === p.id && b.v === p.v) { parts[b.part] = b.cards; of = b.of; } });
+                p.ok = of > 0 && Object.keys(parts).length === of;
+                if (p.ok) for (var i = 0; i < of; i++) cards = cards.concat(parts[i].map(function (c) { return { id: c[0], who: c[1], q: c[2], a: c[3], pack: p.id }; }));
+                return p;
+            });
+            lessons = cards;
+            if (!isTyping()) render();
+        }).catch(function () { /* hors ligne */ });
+    }
+
+    // ---------- DLC : packs de questions avec un titre fun et une image ----------
+
+    var packs = [], dlcEdit = null, dlcOpen = '';
+    // les images sont les compagnons du jeu (dessinés sur la TV) ; [clé, emoji, nom]
+    var DLC_IMGS = [['dragon', '🐉', 'le Dragon'], ['unicorn', '🦄', 'la Licorne'], ['raptor', '🦖', 'le Raptor'], ['dino', '🦕', 'le Dino'], ['fox', '🦊', 'le Renard'],
+        ['owl', '🦉', 'la Chouette'], ['pegasus', '🐴', 'Pégase'], ['mammoth', '🦣', 'le Mammouth'], ['smilodon', '🐯', 'le Tigre à dents de sabre'], ['alien', '👽', 'l’Alien'],
+        ['robot', '🤖', 'le Robot'], ['parrot', '🦜', 'le Perroquet'], ['turtle', '🐢', 'la Tortue'], ['cat', '🐱', 'le Chat'], ['dog', '🐶', 'le Chien'], ['pig', '🐷', 'le Cochon']];
+    var DLC_COLORS = ['#7b3fd6', '#4a6cf7', '#14a3c7', '#2fbf71', '#e0a800', '#ef7a2a', '#ff3d6e', '#c2185b'];
+    var FUN_TITLES = ['Opération {S}', '{S} : la revanche {a}', '{S} en folie !', 'Mission {S}', '{S} Party !', 'Super {S} Turbo', '{S} contre {A}',
+        'Le Défi {a}', 'Le Grand Quiz {a}', 'L’École secrète {a}', '{S} : le retour', 'Les Secrets {a}', '{S} Express', 'La Légende {a}', '{S} XXL'];
+
+    function imgOf(key) { return DLC_IMGS.filter(function (i) { return i[0] === key; })[0] || DLC_IMGS[5]; }
+    // « du Dragon », « de la Licorne », « de l’Alien », « de Pégase »
+    function deName(n) { return n.indexOf('le ') === 0 ? 'du ' + n.slice(3) : 'de ' + n; }
+
+    function funTitle(subject, img) {
+        var s = (subject || 'Révisions').trim(), n = imgOf(img)[2];
+        s = s.charAt(0).toUpperCase() + s.slice(1);
+        var t = FUN_TITLES[Math.floor(Math.random() * FUN_TITLES.length)];
+        return t.replace('{S}', s).replace('{a}', deName(n)).replace('{A}', n).slice(0, 40);
+    }
+
+    function newPackId() { return (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).slice(-10); }
+    function bytes(s) { return unescape(encodeURIComponent(s)).length; }
+    function clean(s, n) { return String(s || '').replace(/[|\s]+/g, ' ').trim().slice(0, n); }
+    function whoLabel(w) { return w === 'tous' ? 'tous' : nameOf(w); }
+
+    function packCards(id) { return lessons.filter(function (c) { return c.pack === id; }); }
+
+    function lessonSection(id) {
+        var mine = packs.filter(function (p) { return id === 'tous' || p.who === id || p.who === 'tous' || packCards(p.id).some(function (c) { return c.who === id; }); });
+        var html = '<section><h2>Leçons & DLC</h2><p class="hint" style="margin:0 0 10px">Des packs de questions avec un titre et une image : ils apparaissent sur la TV dans « Réviser → Leçons & DLC » et dans la révision du jour. Les questions mal sues reviennent plus souvent.</p>';
+        mine.forEach(function (p) {
+            var list = packCards(p.id).filter(function (c) { return id === 'tous' || c.who === id || c.who === 'tous'; });
+            html += '<div class="dlc"><div class="dlcart" style="background:' + esc(p.color) + '">' + imgOf(p.img)[1] + '</div><div class="dlcinfo"><b>' + esc(p.title) + '</b>' +
+                '<small>' + (p.ok ? list.length + ' question' + (list.length > 1 ? 's' : '') : 'chargement…') + (p.id === 'base' ? ' · ajoutées une par une' : ' · pour ' + esc(whoLabel(p.who))) + '</small>' +
+                '<div class="btns">' + (p.ok ? '<button class="mini" data-dlcopen="' + esc(p.id) + '">' + (dlcOpen === p.id ? 'Masquer' : 'Voir') + '</button>' : '') +
+                (p.ok && p.id !== 'base' ? '<button class="mini" data-dlcedit="' + esc(p.id) + '">Modifier</button>' : '') +
+                (p.ok ? '<button class="mini" data-dlcexp="' + esc(p.id) + '">⬇ Exporter</button>' : '') +
+                '<button class="mini ko" data-cmd="dlc-x ' + esc(p.id) + '" data-confirm="Supprimer « ' + esc(p.title) + ' » et toutes ses questions ?">✕</button></div></div></div>';
+            if (dlcOpen === p.id) list.forEach(function (c) {
+                html += '<div class="quest"><span>' + esc(c.q) + '<small class="qmeta">→ ' + esc(c.a) + '</small></span>' +
+                    '<button class="mini ko" data-cmd="carte-x ' + esc(c.id) + '" data-confirm="Supprimer cette question ?">✕</button></div>';
+            });
+        });
+        if (!mine.length) html += '<p class="empty">Aucune leçon pour l’instant. Crée un DLC, importe un fichier ou ajoute une question ci-dessous.</p>';
+        html += '<div class="btns" style="margin-top:12px"><button class="mini pick" id="dlcNew">✨ Créer un DLC</button><button class="mini pick" id="dlcImport">📂 Importer un fichier</button>' +
+            (packs.some(function (p) { return p.ok; }) ? '<button class="mini" id="dlcExportAll">⬇ Tout exporter</button>' : '') +
+            '<button class="mini" id="dlcModel">📄 Fichier modèle</button></div>' +
+            '<input type="file" id="dlcFile" accept=".txt,.csv,.json,text/plain,application/json" hidden>';
+        if (dlcEdit) html += dlcEditor();
+        html += '<p class="lbl" style="margin-top:16px">Ajout rapide dans « Leçons de la semaine »</p>' +
+            '<div class="field"><input id="lessonQ" placeholder="Question (ex. : Capitale de l’Espagne ?)" maxlength="90"></div>' +
+            '<div class="field" style="margin-top:8px"><input id="lessonA" placeholder="Réponse (ex. : Madrid)" maxlength="50"></div>' +
+            '<div class="row2"><button class="send" id="lessonAdd">Ajouter pour ' + (id === 'tous' ? 'tous' : esc(nameOf(id))) + '</button></div>';
+        return html + '</section>';
+    }
+
+    function dlcEditor() {
+        var d = dlcEdit, im = imgOf(d.img);
+        return '<div class="dlced"><div class="dlccover" id="dlcCover" style="background:' + esc(d.color) + '"><span class="tag">DLC</span><div class="big">' + im[1] + '</div><b id="dlcCoverTitle">' + esc(d.title || 'Titre du DLC') + '</b></div>' +
+            '<p class="lbl">Titre</p><div class="field"><input id="dlcTitle" placeholder="Ex. : Opération Fractions" maxlength="40" value="' + esc(d.title) + '"></div>' +
+            '<div class="field" style="margin-top:8px"><input id="dlcSubject" placeholder="Sujet pour le titre fun (ex. : fractions)" maxlength="24"><button class="send" id="dlcFun">🎲 Titre fun</button></div>' +
+            '<p class="lbl">Image</p><div class="emojis">' + DLC_IMGS.map(function (i) { return '<button class="' + (i[0] === d.img ? 'on' : '') + '" data-dimg="' + i[0] + '" title="' + esc(i[2]) + '">' + i[1] + '</button>'; }).join('') + '</div>' +
+            '<p class="lbl">Couleur</p><div class="emojis">' + DLC_COLORS.map(function (c) { return '<button class="sw' + (c === d.color ? ' on' : '') + '" data-dcol="' + c + '" style="background:' + c + '"></button>'; }).join('') + '</div>' +
+            '<p class="lbl">Pour</p><div class="btns">' + KIDS.concat([{ id: 'tous', name: 'Tous' }]).map(function (k) { return '<button class="mini pick' + (k.id === d.who ? ' on' : '') + '" data-dwho="' + k.id + '">' + esc(k.name) + '</button>'; }).join('') + '</div>' +
+            '<p class="lbl">Questions : une par ligne, « question | réponse »</p><div class="field"><textarea id="dlcText" rows="8" placeholder="Combien font 7 × 8 ? | 56&#10;Capitale de l’Italie ? | Rome">' + esc(d.text) + '</textarea></div>' +
+            '<p class="hint" id="dlcCount">' + countLabel(d.text) + '</p>' +
+            '<div class="row2"><button class="send" id="dlcSend">Envoyer à la TV</button><button class="mini" id="dlcCancel">Annuler</button></div></div>';
+    }
+
+    function textCards(text) {
+        var out = [];
+        String(text || '').split('\n').forEach(function (l) { var c = splitLine(l); if (c) out.push(c); });
+        return out;
+    }
+
+    // « question | réponse », ou séparée par une tabulation ou un point-virgule (fichiers de tableur)
+    function splitLine(line) {
+        var l = line.replace(/\r/g, '').trim();
+        if (!l || l.charAt(0) === '#') return null;
+        var sep = l.indexOf('|') > -1 ? '|' : l.indexOf('\t') > -1 ? '\t' : l.indexOf(';') > -1 ? ';' : null;
+        if (!sep) return null;
+        var i = l.indexOf(sep), q = clean(l.slice(0, i).replace(/^"|"$/g, ''), 90), a = clean(l.slice(i + 1).replace(/^"|"$/g, '').replace(/[;\t]+$/, ''), 50);
+        return q && a ? [q, a] : null;
+    }
+
+    function countLabel(text) {
+        var n = textCards(text).length;
+        return n ? n + ' question' + (n > 1 ? 's' : '') + ' prête' + (n > 1 ? 's' : '') + (n > 120 ? ' (120 au maximum par DLC)' : '') + (n < 4 ? ' · avec 4 questions ou plus, la TV propose des réponses à choisir' : '') : 'Aucune question pour l’instant';
+    }
+
+    // Fichier texte (titre: / image: / couleur: / pour: puis les questions) ou JSON ; plusieurs DLC possibles
+    function parseDlcFile(text, fileName) {
+        text = text.replace(/^﻿/, '');
+        var name = clean(fileName.replace(/\.[a-z]+$/i, '').replace(/[-_]+/g, ' '), 40) || 'Mon DLC', list = [];
+        if (/^\s*[\[{]/.test(text)) {
+            var data = JSON.parse(text);
+            (Array.isArray(data) ? data : data.dlc || [data]).forEach(function (o) {
+                var qs = (o.questions || o.cartes || []).map(function (x) { return Array.isArray(x) ? [x[0], x[1]] : [x.q || x.question, x.r || x.a || x.reponse || x['réponse'] || x.answer]; });
+                list.push(fillPack({ title: o.titre || o.title, img: o.image, color: o.couleur || o.color, who: o.pour || o.who, cards: qs.map(function (c) { return [clean(c[0], 90), clean(c[1], 50)]; }).filter(function (c) { return c[0] && c[1]; }) }, name));
+            });
+            return list.filter(function (p) { return p.cards.length; });
+        }
+        var cur = null;
+        text.split('\n').forEach(function (line) {
+            var m = /^\s*(titre|title|image|couleur|color|pour)\s*:\s*(.*)$/i.exec(line);
+            if (m) {
+                var key = m[1].toLowerCase();
+                if (key === 'titre' || key === 'title' || !cur) { cur = { cards: [] }; list.push(cur); }
+                cur[{ titre: 'title', title: 'title', image: 'img', couleur: 'color', color: 'color', pour: 'who' }[key]] = m[2].trim();
+                return;
+            }
+            var c = splitLine(line);
+            if (!c) return;
+            if (!cur) { cur = { cards: [] }; list.push(cur); }
+            cur.cards.push(c);
+        });
+        return list.filter(function (p) { return p.cards.length; }).map(function (p) { return fillPack(p, name); });
+    }
+
+    // Valeurs par défaut et conversion : image en emoji ou en nom, enfant par son prénom
+    function fillPack(p, name) {
+        var img = String(p.img || '').trim().toLowerCase(), who = clean(p.who, 20).toLowerCase();
+        var im = DLC_IMGS.filter(function (i) { return i[0] === img || i[1] === img || i[2].toLowerCase().indexOf(img) > -1 && img.length > 2; })[0];
+        var kid = KIDS.filter(function (k) { return k.id === who || k.name.toLowerCase() === who; })[0];
+        return {
+            title: clean(p.title, 40) || name, img: im ? im[0] : DLC_IMGS[Math.floor(Math.random() * DLC_IMGS.length)][0],
+            color: /^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : DLC_COLORS[Math.floor(Math.random() * DLC_COLORS.length)],
+            who: kid ? kid.id : current !== 'gestion' && current !== 'tous' && !who ? current : 'tous', cards: p.cards
+        };
+    }
+
+    // Un DLC part en plusieurs messages : l'en-tête, puis les questions par paquets de moins de 3 Ko
+    function sendPack(p) {
+        var cards = p.cards.slice(0, 120), bodies = ['dlc ' + p.id + ' ' + p.who + ' ' + p.img + ' ' + p.color + ' ' + cards.length + ' ' + clean(p.title, 40)], cur = 'dlc+ ' + p.id;
+        cards.forEach(function (c) {
+            var line = '\n' + c[0] + ' | ' + c[1];
+            if (bytes(cur + line) > 3000) { bodies.push(cur); cur = 'dlc+ ' + p.id; }
+            cur += line;
+        });
+        bodies.push(cur);
+        return bodies.reduce(function (pr, b) {
+            return pr.then(function () { return fetch(NTFY + topic, { method: 'POST', body: b }).then(function (r) { if (!r.ok) throw new Error(); }); });
+        }, Promise.resolve());
+    }
+
+    function sendPacks(list) {
+        var chain = list.reduce(function (pr, p) { return pr.then(function () { return sendPack(p); }); }, Promise.resolve());
+        chain.then(function () {
+            toast(list.length > 1 ? list.length + ' DLC envoyés ✓' : 'DLC « ' + list[0].title + ' » envoyé ✓');
+            dlcEdit = null;
+            render();
+            [8000, 20000, 40000].forEach(function (t) { setTimeout(loadLessons, t); });
+            setTimeout(loadState, 8000);
+        }).catch(function () { toast('Échec de l’envoi, vérifie ta connexion'); });
+    }
+
+    function packFile(list) {
+        return '# Grumeaux App · DLC de révision\n# Une question par ligne : question | réponse\n# image : ' + DLC_IMGS.map(function (i) { return i[0]; }).join(', ') + '\n' +
+            list.map(function (p) {
+                return '\ntitre: ' + p.title + '\nimage: ' + p.img + '\ncouleur: ' + p.color + '\npour: ' + (p.who === 'tous' ? 'tous' : nameOf(p.who)) + '\n' +
+                    p.cards.map(function (c) { return c[0] + ' | ' + c[1]; }).join('\n') + '\n';
+            }).join('');
+    }
+
+    function download(name, text) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+
+    function slug(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dlc'; }
+
+    function exportable(p) {
+        return { title: p.title, img: p.img, color: p.color, who: p.id === 'base' ? 'tous' : p.who, cards: packCards(p.id).map(function (c) { return [c.q, c.a]; }) };
+    }
+
+    function dlcClick(b) {
+        var v;
+        if (b.id === 'dlcNew') { dlcEdit = { id: newPackId(), title: '', img: 'dragon', color: '#7b3fd6', who: current === 'tous' || current === 'gestion' ? 'tous' : current, text: '' }; render(); return true; }
+        if (b.id === 'dlcCancel') { dlcEdit = null; render(); return true; }
+        if (b.id === 'dlcImport') { $('dlcFile').click(); return true; }
+        if (b.id === 'dlcModel') {
+            download('modele-dlc.txt', packFile([{ title: 'Opération Tables', img: 'dragon', color: '#7b3fd6', who: 'tous', cards: [['Combien font 7 × 8 ?', '56'], ['Combien font 6 × 9 ?', '54'], ['Combien font 8 × 8 ?', '64'], ['Combien font 9 × 7 ?', '63']] }]));
+            return true;
+        }
+        if (b.id === 'dlcExportAll') { download('dlc-grumeaux.txt', packFile(packs.filter(function (p) { return p.ok; }).map(exportable))); return true; }
+        if ((v = b.getAttribute('data-dlcexp'))) { var pe = packs.filter(function (p) { return p.id === v; })[0]; download(slug(pe.title) + '.txt', packFile([exportable(pe)])); return true; }
+        if ((v = b.getAttribute('data-dlcopen'))) { dlcOpen = dlcOpen === v ? '' : v; render(); return true; }
+        if ((v = b.getAttribute('data-dlcedit'))) {
+            var pm = packs.filter(function (p) { return p.id === v; })[0];
+            dlcEdit = { id: pm.id, title: pm.title, img: pm.img, color: pm.color, who: pm.who, text: packCards(pm.id).map(function (c) { return c.q + ' | ' + c.a; }).join('\n') };
+            render();
+            $('dlcTitle').scrollIntoView({ block: 'center' });
+            return true;
+        }
+        if (!dlcEdit) return false;
+        syncEditor();
+        if ((v = b.getAttribute('data-dimg'))) dlcEdit.img = v;
+        else if ((v = b.getAttribute('data-dcol'))) dlcEdit.color = v;
+        else if ((v = b.getAttribute('data-dwho'))) dlcEdit.who = v;
+        else if (b.id === 'dlcFun') { dlcEdit.title = funTitle($('dlcSubject').value, dlcEdit.img); $('dlcTitle').value = dlcEdit.title; }
+        else if (b.id === 'dlcSend') {
+            var cards = textCards(dlcEdit.text);
+            if (!dlcEdit.title.trim()) { toast('Donne un titre au DLC (ou touche 🎲)'); return true; }
+            if (!cards.length) { toast('Ajoute au moins une question « question | réponse »'); return true; }
+            sendPacks([{ id: dlcEdit.id, title: dlcEdit.title, img: dlcEdit.img, color: dlcEdit.color, who: dlcEdit.who, cards: cards }]);
+            return true;
+        } else return false;
+        render();
+        return true;
+    }
+
+    function syncEditor() {
+        if (!dlcEdit || !$('dlcTitle')) return;
+        dlcEdit.title = $('dlcTitle').value;
+        dlcEdit.text = $('dlcText').value;
+    }
+
+    $('view').addEventListener('input', function (e) {
+        if (!dlcEdit) return;
+        if (e.target.id === 'dlcTitle') { dlcEdit.title = e.target.value; $('dlcCoverTitle').textContent = e.target.value || 'Titre du DLC'; }
+        if (e.target.id === 'dlcText') { dlcEdit.text = e.target.value; $('dlcCount').textContent = countLabel(e.target.value); }
+    });
+
+    $('view').addEventListener('change', function (e) {
+        if (e.target.id !== 'dlcFile' || !e.target.files[0]) return;
+        var f = e.target.files[0], rd = new FileReader();
+        rd.onload = function () {
+            var list;
+            try { list = parseDlcFile(String(rd.result), f.name); } catch (err) { toast('Fichier illisible : vérifie le format'); return; }
+            if (!list.length) { toast('Aucune question trouvée (format : question | réponse)'); return; }
+            if (list.length === 1) {
+                var p = list[0];
+                dlcEdit = { id: newPackId(), title: p.title, img: p.img, color: p.color, who: p.who, text: p.cards.map(function (c) { return c[0] + ' | ' + c[1]; }).join('\n') };
+                render();
+                toast(p.cards.length + ' questions importées : vérifie puis envoie');
+                return;
+            }
+            var total = list.reduce(function (n, p) { return n + p.cards.length; }, 0);
+            if (!confirm('Importer ' + list.length + ' DLC (' + total + ' questions) sur la TV ?\n\n' + list.map(function (p) { return '• ' + p.title + ' (' + p.cards.length + ')'; }).join('\n'))) return;
+            sendPacks(list.map(function (p) { p.id = newPackId(); return p; }));
+        };
+        rd.readAsText(f, 'utf-8');
+        e.target.value = '';
+    });
+
+    function revSection(id, k) {
+        var r = k && k.rev;
+        if (!r) return '';
+        var html = '<section><h2>Révisions</h2><div class="revnums">' +
+            '<div><b>' + (r.today ? '✓' : '—') + '</b><small>Révision du jour</small></div>' +
+            '<div><b>' + r.streak + '</b><small>jours de suite (record ' + r.best + ')</small></div>' +
+            '<div><b>' + r.herc + '/12</b><small>Travaux d’Hercule</small></div></div>' +
+            '<p class="lbl">Niveau des questions</p><div class="btns">' + LEVELS.map(function (l) {
+                var on = l[0] === 'auto' ? r.auto : !r.auto && String(r.lvl) === l[0];
+                return '<button class="mini pick' + (on ? ' on' : '') + '" data-cmd="niveau ' + id + ' ' + l[0] + '">' + l[1] + (l[0] === 'auto' && r.auto ? ' (' + ['', 'CM1', 'CM2 – 6e', '5e – 4e'][r.lvl] + ')' : '') + '</button>';
+            }).join('') + '</div><div class="subj">';
+        var weak = [];
+        SUBJ.forEach(function (s) {
+            var x = r.subj[s[0]];
+            if (!x || !x[1]) { html += '<div class="sb"><span>' + s[1] + '</span><i><em style="width:0"></em></i><small>pas encore</small></div>'; return; }
+            var pct = Math.round(x[0] / x[1] * 100);
+            if (x[1] >= 5 && pct < 60) weak.push(s[1]);
+            html += '<div class="sb"><span>' + s[1] + '</span><i><em class="' + (pct < 50 ? 'lo' : pct < 75 ? 'mid' : '') + '" style="width:' + pct + '%"></em></i><small>' + pct + ' % · ' + x[1] + ' q.</small></div>';
+        });
+        html += '</div>' + (weak.length ? '<p class="hint">À retravailler : <b>' + weak.join(', ') + '</b></p>' : '<p class="hint">Les jauges montrent le pourcentage de bonnes réponses dans « Réviser ».</p>');
+        return html + '</section>';
+    }
+
     $('view').onclick = function (e) {
         var b = e.target.closest('button');
         if (!b) return;
+        if (dlcClick(b)) return;
         var step = b.getAttribute('data-step');
         if (step) {
             var d = +b.getAttribute('data-d');
@@ -598,11 +978,27 @@ html, body { overflow-x: hidden; }
             return;
         }
         if (b.id === 'spinPhone' || b.id === 'spinTv') { spin(b.id === 'spinTv'); return; }
+        if (b.id === 'lessonAdd') {
+            var lq = $('lessonQ').value.replace(/[|\s]+/g, ' ').trim(), la = $('lessonA').value.replace(/[|\s]+/g, ' ').trim();
+            if (!lq || !la) { toast('Écris la question et la réponse'); return; }
+            send('carte ' + current + ' ' + lq + ' | ' + la);
+            $('lessonQ').value = '';
+            $('lessonA').value = '';
+            setTimeout(loadLessons, 8000);
+            setTimeout(loadLessons, 25000);
+            return;
+        }
         if (b.id === 'msgSend') {
             var m = $('msgText').value.trim();
             if (!m) { toast('Écris d’abord le message'); return; }
             send(current + ' message ' + m.replace(/\s+/g, ' '));
             $('msgText').value = '';
+            return;
+        }
+        if (b.id === 'newsOk') {
+            newsSeen = CHANGELOG[0].v;
+            store('grumeaux.news', newsSeen);
+            render();
             return;
         }
         if (b.id === 'copyLink') {
@@ -648,7 +1044,11 @@ html, body { overflow-x: hidden; }
             var iso = $('bd-' + bdId).value, parts = iso.split('-');
             var who = PEOPLE.filter(function (p) { return p.id === bdId; })[0].name;
             if (!iso && !confirm('Effacer l’anniversaire de ' + who + ' ?')) return;
-            send('anniv ' + bdId + (iso ? ' ' + parts[2] + '/' + parts[1] + '/' + parts[0] : ''));
+            var fr = iso ? parts[2] + '/' + parts[1] + '/' + parts[0] : '';
+            send('anniv ' + bdId + (fr ? ' ' + fr : ''));
+            bdSaved[bdId] = fr;
+            delete bdEdit[bdId];
+            render();
             return;
         }
         var opt = b.getAttribute('data-opt');
