@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1e">
+<title>Grumeaux App · Parents</title>
+<style>
+:root {
+    --bg: #0d0b1e; --card: #1a1733; --card2: #241f45; --line: rgba(255, 255, 255, 0.08);
+    --text: #f4f5fb; --muted: rgba(244, 245, 251, 0.6); --gold: #ffd34d; --xp: #9fd8ff;
+    --plus: #3ee67a; --minus: #ff5f6d; --accent: #8b6bff;
+    --rainbow: linear-gradient(90deg, #ff4d6d, #ffb627, #3ee67a, #3db8ff, #a45cff);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; min-height: 100vh; padding-bottom: 40px; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; }
+
+header { position: sticky; top: 0; z-index: 5; background: rgba(13, 11, 30, 0.94); padding: 14px 16px 0; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.brand h1 { font-size: 19px; font-weight: 800; }
+.brand small { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+.brand .gear { margin-left: auto; background: var(--card); width: 38px; height: 38px; border-radius: 12px; font-size: 18px; }
+.bar { height: 3px; background: var(--rainbow); margin: 12px -16px 0; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px 0; scrollbar-width: none; }
+.tabs button { flex: 1; min-width: 80px; padding: 10px 8px; border-radius: 14px; background: var(--card); font-weight: 700; }
+.tabs button.on { background: var(--accent); }
+
+main { max-width: 640px; margin: 0 auto; padding: 16px; }
+.status { font-size: 13px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #777; }
+.dot.ok { background: var(--plus); }
+.dot.old { background: #ffb627; }
+
+.hero { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 14px; }
+.hero .name { font-size: 26px; font-weight: 800; }
+.hero .nums { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; font-weight: 700; }
+.hero .nums .s { color: var(--gold); }
+.hero .nums .x { color: var(--xp); }
+.hero .lvl { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.prog { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 6px; margin-top: 12px; overflow: hidden; }
+.prog span { display: block; height: 100%; background: var(--rainbow); border-radius: 6px; }
+
+section { background: var(--card); border-radius: 22px; padding: 16px; margin-bottom: 14px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+html, body { overflow-x: hidden; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.act span { min-width: 0; }
+.act { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; background: var(--card2); text-align: left; min-height: 52px; }
+.act b { min-width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; flex: none; }
+.act.plus b { background: rgba(62, 230, 122, 0.18); color: var(--plus); }
+.act.minus b { background: rgba(255, 95, 109, 0.18); color: var(--minus); }
+.act:active { transform: scale(0.97); }
+.act.done { opacity: 0.55; }
+.act.done b { background: rgba(62, 230, 122, 0.3); color: var(--plus); }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.custom { display: flex; gap: 8px; margin-top: 10px; }
+.stepper { display: flex; align-items: center; background: var(--card2); border-radius: 14px; }
+.stepper button { width: 38px; height: 48px; background: none; font-size: 22px; font-weight: 700; }
+.stepper span { min-width: 34px; text-align: center; font-weight: 800; }
+.custom input { flex: 1; min-width: 0; background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; }
+.send { background: var(--accent); border-radius: 14px; padding: 0 16px; font-weight: 700; }
+.chests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.chest { padding: 12px 6px; border-radius: 14px; background: var(--card2); text-align: center; font-weight: 700; font-size: 14px; }
+.chest i { display: block; width: 26px; height: 20px; margin: 0 auto 6px; border-radius: 6px 6px 3px 3px; border: 3px solid currentColor; }
+.chest small { display: block; color: var(--muted); font-weight: 500; }
+.log div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.log div:last-child { border: 0; }
+.log .p { color: var(--plus); font-weight: 700; white-space: nowrap; }
+.log .m { color: var(--minus); font-weight: 700; white-space: nowrap; }
+.empty { color: var(--muted); font-size: 14px; }
+
+.setup { max-width: 480px; margin: 40px auto; padding: 0 16px; }
+.setup .card { background: var(--card); border-radius: 22px; padding: 22px; }
+.setup h2 { color: var(--text); font-size: 20px; text-transform: none; letter-spacing: 0; }
+.setup p { color: var(--muted); margin-bottom: 14px; font-size: 15px; }
+.setup input { width: 100%; height: 50px; background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; font-family: ui-monospace, Consolas, monospace; margin-bottom: 12px; }
+.setup .send { width: 100%; height: 50px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 120px); background: #fff; color: #111; padding: 12px 18px; border-radius: 14px; font-weight: 600; max-width: calc(100% - 32px); transition: transform 0.25s; z-index: 10; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); }
+.toast.show { transform: translate(-50%, 0); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header id="top" hidden>
+    <div class="brand">
+        <svg viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4d6d"/><stop offset=".25" stop-color="#ffb627"/><stop offset=".5" stop-color="#3ee67a"/><stop offset=".75" stop-color="#3db8ff"/><stop offset="1" stop-color="#a45cff"/></linearGradient></defs><path d="M256 128 L176 52 M256 128 L340 44" stroke="#fff" stroke-width="18" stroke-linecap="round"/><rect x="48" y="112" width="416" height="338" rx="74" fill="url(#g)"/><rect x="92" y="150" width="328" height="226" rx="34" fill="#1a1440"/></svg>
+        <div><h1>Grumeaux App</h1><small>Espace parents</small></div>
+        <button class="gear" id="gear" aria-label="Changer de sujet">⚙</button>
+    </div>
+    <div class="bar"></div>
+    <nav class="tabs" id="tabs"></nav>
+</header>
+
+<main id="app" hidden>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">Connexion à la TV…</span></div>
+    <div id="view"></div>
+</main>
+
+<div class="setup" id="setup" hidden>
+    <div class="card">
+        <h2>Relier à la TV</h2>
+        <p>Sur la TV, ouvre <b>Bonus / Malus</b> : le nom du sujet est affiché sous le QR code (il commence par <code>tvperso-</code>).</p>
+        <input id="topicInput" placeholder="tvperso-…" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <button class="send" id="topicSave">Valider</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    var NTFY = 'https://ntfy.sh/';
+    var BONUS = [[1, 'Aide à la maison'], [1, 'Devoirs faits'], [1, 'Chambre rangée'], [2, 'Très sage'], [3, 'Exploit !']];
+    var MALUS = [[-1, 'Bêtise'], [-1, 'Dispute'], [-2, 'N’a pas écouté'], [-3, 'Grosse bêtise']];
+    var CHESTS = [['bronze', 'Bronze', '#c27a3a'], ['argent', 'Argent', '#c3cad6'], ['or', 'Or', '#f4c430']];
+    var KIDS = [{ id: 'milan', name: 'Milan' }, { id: 'willo', name: 'Willo' }, { id: 'rogan', name: 'Rogan' }];
+
+    var topic = '', state = null, current = 'milan', customN = 1, refreshTimer = null;
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+    function toast(msg) {
+        var el = $('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toast.t);
+        toast.t = setTimeout(function () { el.classList.remove('show'); }, 2600);
+    }
+
+    // ---------- Liaison ----------
+
+    function start() {
+        var fromHash = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+        topic = fromHash || store('grumeaux.topic') || '';
+        if (fromHash) store('grumeaux.topic', fromHash);
+        if (!/^tvperso-[a-z0-9]{6,}$/.test(topic)) { showSetup(); return; }
+        $('setup').hidden = true;
+        $('top').hidden = false;
+        $('app').hidden = false;
+        renderTabs();
+        render();
+        loadState();
+        send('sync', true);
+        setInterval(loadState, 15000);
+    }
+
+    function showSetup() {
+        $('top').hidden = true;
+        $('app').hidden = true;
+        $('setup').hidden = false;
+        $('topicInput').value = topic;
+    }
+
+    $('topicSave').onclick = function () {
+        var v = $('topicInput').value.trim().toLowerCase();
+        if (!/^tvperso-[a-z0-9]{6,}$/.test(v)) { toast('Le sujet doit ressembler à tvperso-abc123…'); return; }
+        store('grumeaux.topic', v);
+        location.hash = v;
+        location.reload();
+    };
+    $('gear').onclick = showSetup;
+
+    // Dernier état publié par la TV (gardé 12 h par ntfy)
+    function loadState() {
+        fetch(NTFY + topic + '-etat/json?poll=1&since=12h').then(function (r) { return r.text(); }).then(function (txt) {
+            var lines = txt.trim().split('\n').filter(Boolean), last = null;
+            lines.forEach(function (l) { try { var m = JSON.parse(l); if (m.event === 'message') last = m; } catch (e) { /* ligne ignorée */ } });
+            if (last) {
+                try { state = JSON.parse(last.message); } catch (e) { /* message illisible */ }
+            }
+            render();
+        }).catch(function () { setStatus('', 'Pas de connexion internet'); });
+    }
+
+    function send(cmd, silent) {
+        return fetch(NTFY + topic, { method: 'POST', body: cmd }).then(function (r) {
+            if (!r.ok) throw new Error();
+            if (!silent) toast('Envoyé ✓ La TV l’appliquera dans quelques secondes');
+            // on relit l'état plusieurs fois le temps que la TV traite la commande
+            clearInterval(refreshTimer);
+            var n = 0;
+            refreshTimer = setInterval(function () { loadState(); if (++n >= 6) clearInterval(refreshTimer); }, 6000);
+        }).catch(function () { toast('Échec de l’envoi, vérifie ta connexion'); });
+    }
+
+    // ---------- Affichage ----------
+
+    function setStatus(cls, text) {
+        $('dot').className = 'dot ' + cls;
+        $('statusText').textContent = text;
+    }
+
+    function ago(t) {
+        var m = Math.round((Date.now() - t) / 60000);
+        return m < 1 ? 'à l’instant' : m < 60 ? 'il y a ' + m + ' min' : 'il y a ' + Math.round(m / 60) + ' h';
+    }
+
+    function renderTabs() {
+        $('tabs').innerHTML = KIDS.concat([{ id: 'tous', name: 'Tous' }]).map(function (k) {
+            return '<button data-kid="' + k.id + '" class="' + (k.id === current ? 'on' : '') + '">' + esc(k.name) + '</button>';
+        }).join('');
+    }
+
+    $('tabs').onclick = function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        current = b.getAttribute('data-kid');
+        customN = 1;
+        renderTabs();
+        render();
+    };
+
+    function kidState(id) {
+        if (!state) return null;
+        for (var i = 0; i < state.kids.length; i++) if (state.kids[i].id === id) return state.kids[i];
+        return null;
+    }
+
+    function act(cls, badge, label, cmd, done) {
+        return '<button class="act ' + cls + (done ? ' done' : '') + '" data-cmd="' + esc(cmd) + '"><b>' + badge + '</b><span>' + esc(label) + '</span></button>';
+    }
+
+    function render() {
+        if (state) {
+            var fresh = Date.now() - state.t < 30 * 60000;
+            setStatus(fresh ? 'ok' : 'old', 'Données de la TV ' + ago(state.t) + (fresh ? '' : ' (TV éteinte ou sur une autre appli ?)'));
+        } else setStatus('', 'En attente de la TV… (elle doit être allumée sur Grumeaux App)');
+
+        var id = current, k = kidState(id), who = id === 'tous' ? 'tous' : id, html = '';
+        if (id === 'tous') {
+            html += '<div class="hero"><div class="name">Toute la fratrie</div><div class="lvl">Les actions s’appliquent à Milan, Willo et Rogan.</div></div>';
+        } else if (k) {
+            var pct = k.next ? Math.min(100, Math.round(k.pts / k.next * 100)) : 100;
+            html += '<div class="hero"><div class="name">' + esc(k.name) + '</div><div class="nums"><span class="s">★ ' + k.stars + '</span><span class="x">✦ ' + k.xp + ' XP</span></div>' +
+                '<div class="lvl">Niveau ' + k.level + ' — ' + esc(k.title) + (k.next ? ' · encore ' + (k.next - k.pts) + ' points' : '') + '</div><div class="prog"><span style="width:' + pct + '%"></span></div></div>';
+        } else {
+            html += '<div class="hero"><div class="name">' + esc(nameOf(id)) + '</div><div class="lvl">Les étoiles s’afficheront dès que la TV aura répondu.</div></div>';
+        }
+
+        html += '<section><h2>Bonus</h2><div class="grid">' + BONUS.map(function (b) { return act('plus', '+' + b[0], b[1], who + ' +' + b[0] + ' ' + b[1]); }).join('') + '</div></section>';
+        html += '<section><h2>Malus</h2><div class="grid">' + MALUS.map(function (b) { return act('minus', b[0], b[1], who + ' ' + b[0] + ' ' + b[1]); }).join('') + '</div>' +
+            '<div class="custom"><div class="stepper"><button id="dec">−</button><span id="cn">' + (customN > 0 ? '+' : '') + customN + '</span><button id="inc">+</button></div>' +
+            '<input id="reason" placeholder="Raison (facultatif)" maxlength="60"><button class="send" id="customSend">OK</button></div></section>';
+
+        if (k) {
+            html += '<section><h2>Défis de la semaine (+2 ★)</h2><div class="list">' + k.challenges.map(function (c, i) {
+                return act('plus', c.done ? '✓' : '+2', c.text, who + ' defi ' + (i + 1), c.done);
+            }).join('') + act('plus', '↻', 'Tirer 3 nouveaux défis', who + ' nouveaux') + '</div></section>';
+            html += '<section><h2>Mission du jour (+1 ★)</h2><div class="list">' + act('plus', k.mission.done ? '✓' : '+1', k.mission.text, who + ' mission', k.mission.done) + '</div></section>';
+        } else if (id !== 'tous') {
+            html += '<section><h2>Défis et mission</h2><div class="list">' + act('plus', '+1', 'Valider la mission du jour', who + ' mission') + '</div></section>';
+        } else {
+            html += '<section><h2>Mission du jour (+1 ★)</h2><div class="list">' + act('plus', '+1', 'Valider la mission de chacun', 'tous mission') + '</div></section>';
+        }
+
+        html += '<section><h2>Offrir un coffre</h2><div class="chests">' + CHESTS.map(function (c) {
+            return '<button class="chest" data-cmd="' + who + ' coffre ' + c[0] + '" style="color:' + c[2] + '"><i></i><span style="color:var(--text)">' + c[1] + '</span>' +
+                (k ? '<small>en stock : ' + (k.chests[c[0]] || 0) + '</small>' : '') + '</button>';
+        }).join('') + '</div></section>';
+
+        if (k) {
+            html += '<section><h2>Derniers bonus et malus</h2><div class="log">' + (k.log.length ? k.log.map(function (e) {
+                return '<div><span>' + esc(e.why) + '</span><span class="' + (e.n < 0 ? 'm' : 'p') + '">' + (e.n > 0 ? '+' : '') + e.n + ' ★</span></div>';
+            }).join('') : '<p class="empty">Rien pour l’instant</p>') + '</div></section>';
+        }
+
+        var keep = $('reason') ? $('reason').value : '';
+        $('view').innerHTML = html;
+        $('reason').value = keep;
+    }
+
+    function nameOf(id) {
+        for (var i = 0; i < KIDS.length; i++) if (KIDS[i].id === id) return KIDS[i].name;
+        return id;
+    }
+
+    $('view').onclick = function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        if (b.id === 'dec' || b.id === 'inc') {
+            customN += b.id === 'inc' ? 1 : -1;
+            if (customN === 0) customN = b.id === 'inc' ? 1 : -1;
+            customN = Math.max(-10, Math.min(10, customN));
+            $('cn').textContent = (customN > 0 ? '+' : '') + customN;
+            return;
+        }
+        if (b.id === 'customSend') {
+            var who = current === 'tous' ? 'tous' : current, why = $('reason').value.trim();
+            send(who + ' ' + (customN > 0 ? '+' : '') + customN + (why ? ' ' + why : ''));
+            $('reason').value = '';
+            return;
+        }
+        var cmd = b.getAttribute('data-cmd');
+        if (!cmd) return;
+        if (b.classList.contains('done')) { toast('Déjà validé'); return; }
+        send(cmd);
+        b.style.outline = '2px solid var(--accent)';
+    };
+
+    start();
+})();
+</script>
+</body>
+</html>
