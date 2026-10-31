@@ -100,6 +100,7 @@ html, body { overflow-x: hidden; }
 .mrow .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-weight: 700; }
 .mrow .top small { color: var(--gold); font-weight: 700; }
 .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.btns input.date { width: auto; flex: 1; min-width: 150px; color-scheme: dark; }
 .btns input { width: 84px; background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; height: 38px; color: var(--text); font: inherit; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 0; background: none; text-align: left; border-bottom: 1px solid var(--line); }
 .switch:last-child { border: 0; }
@@ -151,6 +152,7 @@ html, body { overflow-x: hidden; }
     var CHESTS = [['bronze', 'Bronze', '#c27a3a'], ['argent', 'Argent', '#c3cad6'], ['or', 'Or', '#f4c430']];
     var KIDS = [{ id: 'milan', name: 'Milan' }, { id: 'willo', name: 'Willo' }, { id: 'rogan', name: 'Rogan' }];
     var OPTS = [['turns', 'Tour de rôle « qui choisit »'], ['seasonal', 'Décorations de saison'], ['world', 'Décor qui grandit avec le niveau']];
+    var PEOPLE = KIDS.concat([{ id: 'al', name: 'Al' }, { id: '3ldri', name: '3ldri' }]);
     var TABS = KIDS.concat([{ id: 'tous', name: 'Tous' }, { id: 'gestion', name: 'Gestion' }]);
 
     var topic = '', state = null, current = 'milan', customN = 1, questN = 2, refreshTimer = null, pendingOpts = {};
@@ -267,6 +269,20 @@ html, body { overflow-x: hidden; }
         return null;
     }
 
+    // « 14/03/2015 » <-> « 2015-03-14 » (champ date du téléphone)
+    function toIso(s) {
+        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || '');
+        return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : '';
+    }
+
+    function ageOf(s) {
+        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || '');
+        if (!m) return null;
+        var now = new Date(), age = now.getFullYear() - m[3];
+        if (now.getMonth() + 1 < +m[2] || (now.getMonth() + 1 === +m[2] && now.getDate() < +m[1])) age--;
+        return age >= 0 ? age : null;
+    }
+
     function nameOf(id) {
         for (var i = 0; i < KIDS.length; i++) if (KIDS[i].id === id) return KIDS[i].name;
         return id;
@@ -360,6 +376,15 @@ html, body { overflow-x: hidden; }
         });
         html += '</section>';
 
+        html += '<section><h2>Anniversaires</h2>';
+        PEOPLE.forEach(function (p) {
+            var cur = state && state.opts && state.opts.bd ? state.opts.bd[p.id] || '' : '', d = toIso(cur), age = ageOf(cur);
+            html += '<div class="mrow"><div class="top"><span>' + esc(p.name) + '</span><small>' + (age !== null ? age + ' ans' : cur ? esc(cur) : 'non renseigné') + '</small></div>' +
+                '<div class="btns"><input type="date" class="date" id="bd-' + p.id + '" value="' + d + '"' + (state && state.opts ? '' : ' disabled') + '>' +
+                '<button class="mini ok" data-bd="' + p.id + '">Enregistrer</button></div></div>';
+        });
+        html += '<p class="hint">Avec l’année de naissance, la TV affiche l’âge dans les comptes à rebours et le jour J.</p></section>';
+
         html += '<section><h2>Réglages de la TV</h2>';
         OPTS.forEach(function (o) {
             var on = o[0] in pendingOpts ? pendingOpts[o[0]] : !!(state && state.opts && state.opts[o[0]]);
@@ -421,6 +446,14 @@ html, body { overflow-x: hidden; }
             if (isNaN(v) || v < 0) { toast('Entre un nombre d’étoiles'); return; }
             if (!confirm('Mettre ' + nameOf(kidStars) + ' à ' + v + ' étoiles ?')) return;
             send(kidStars + ' etoiles ' + v);
+            return;
+        }
+        var bdId = b.getAttribute('data-bd');
+        if (bdId) {
+            var iso = $('bd-' + bdId).value, parts = iso.split('-');
+            var who = PEOPLE.filter(function (p) { return p.id === bdId; })[0].name;
+            if (!iso && !confirm('Effacer l’anniversaire de ' + who + ' ?')) return;
+            send('anniv ' + bdId + (iso ? ' ' + parts[2] + '/' + parts[1] + '/' + parts[0] : ''));
             return;
         }
         var opt = b.getAttribute('data-opt');
