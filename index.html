@@ -115,6 +115,15 @@ html, body { overflow-x: hidden; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .chip { padding: 8px 12px; border-radius: 20px; background: var(--card2); font-size: 14px; }
 .send.danger { background: #c62f45; }
+.lbl { font-size: 13px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
+.mini small { font-weight: 500; opacity: 0.75; }
+.qmeta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.wheel { position: relative; width: min(280px, 80vw); margin: 16px auto 6px; }
+.wheel svg { width: 100%; display: block; transition: transform 4s cubic-bezier(0.15, 0.7, 0.15, 1); }
+.wheel svg text { font: 800 15px system-ui, sans-serif; fill: #fff; }
+.wheel i { position: absolute; left: 50%; top: -8px; margin-left: -12px; z-index: 1; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 24px solid #fff; }
+.wheelres { text-align: center; font-size: 22px; font-weight: 800; color: var(--gold); min-height: 30px; }
+.send.alt { background: var(--card2); border: 1px solid var(--accent); }
 .tvsays { font-size: 13px; background: rgba(139, 107, 255, 0.15); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
 </style>
 </head>
@@ -154,15 +163,20 @@ html, body { overflow-x: hidden; }
     var BONUS = [[1, 'Aide à la maison'], [1, 'Devoirs faits'], [1, 'Chambre rangée'], [2, 'Très sage'], [3, 'Exploit !']];
     var MALUS = [[-1, 'Bêtise'], [-1, 'Dispute'], [-2, 'N’a pas écouté'], [-3, 'Grosse bêtise']];
     var CHESTS = [['bronze', 'Bronze', '#c27a3a'], ['argent', 'Argent', '#c3cad6'], ['or', 'Or', '#f4c430']];
-    var KIDS = [{ id: 'milan', name: 'Milan' }, { id: 'willo', name: 'Willo' }, { id: 'rogan', name: 'Rogan' }];
+    var KIDS = [{ id: 'milan', name: 'Milan', color: '#ff6b6b' }, { id: 'willo', name: 'Willo', color: '#ffb547' }, { id: 'rogan', name: 'Rogan', color: '#b18cff' }];
+    var TIMERS = [[0, 'Sans limite'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [45, '45 min'], [60, '1 h'], [120, '2 h']];
     var OPTS = [['turns', 'Tour de rôle « qui choisit »'], ['seasonal', 'Décorations de saison'], ['world', 'Décor qui grandit avec le niveau']];
-    var PEOPLE = KIDS.concat([{ id: 'al', name: 'Al' }, { id: '3ldri', name: '3ldri' }]);
+    var PEOPLE = KIDS.concat([{ id: 'al', name: 'Al', color: '#6d7cff' }, { id: '3ldri', name: '3ldri', color: '#2fd9a4' }]);
     var PARENTS = [{ id: 'al', name: 'Al' }, { id: '3ldri', name: '3ldri' }];
     var CHEERS = ['Je suis fier de toi !', 'Bravo pour tes efforts !', 'Tu es génial, continue !', 'Bonne journée mon champion !', 'Je t’aime fort ❤', 'Courage pour ton contrôle !'];
     var sender = store('grumeaux.sender') || 'al';
     var TABS = KIDS.concat([{ id: 'tous', name: 'Tous' }, { id: 'gestion', name: 'Gestion' }]);
 
     var topic = '', state = null, current = 'milan', customN = 1, questN = 2, refreshTimer = null, pendingOpts = {};
+    var qFor = null, qTeam = [], qChef = '', qMin = 0;
+    var wheelPeople = (store('grumeaux.roue') || 'milan,willo').split(',').filter(function (id) { return PEOPLE.some(function (p) { return p.id === id; }); });
+    var wheelRot = 0, wheelSpinning = false, wheelResult = '';
+    if (wheelPeople.length < 2) wheelPeople = ['milan', 'willo'];
 
     function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -291,7 +305,7 @@ html, body { overflow-x: hidden; }
     }
 
     function nameOf(id) {
-        for (var i = 0; i < KIDS.length; i++) if (KIDS[i].id === id) return KIDS[i].name;
+        for (var i = 0; i < PEOPLE.length; i++) if (PEOPLE[i].id === id) return PEOPLE[i].name;
         return id;
     }
 
@@ -305,6 +319,7 @@ html, body { overflow-x: hidden; }
 
     function render() {
         renderStatus();
+        if (wheelSpinning) return;
         var html = '';
         if (state && state.last && Date.now() - state.last.t < 5 * 60000) html += '<div class="tvsays">📺 ' + esc(state.last.msg) + '</div>';
         html += current === 'gestion' ? manageView() : kidView(current);
@@ -330,19 +345,8 @@ html, body { overflow-x: hidden; }
         html += '<section><h2>Malus</h2><div class="grid">' + MALUS.map(function (b) { return act('minus', b[0], b[1], who + ' ' + b[0] + ' ' + b[1]); }).join('') + '</div>' +
             '<div class="custom">' + stepper('cn', customN) + '<input id="reason" placeholder="Raison (facultatif)" maxlength="60"><button class="send" id="customSend">OK</button></div></section>';
 
-        // Missions spontanées
-        html += '<section><h2>Mission spéciale</h2><div class="field"><input id="questText" placeholder="Ex. : Ranger le garage avec papa" maxlength="60"></div>' +
-            '<div class="row2">' + stepper('qn', questN) + '<button class="send" id="questSend">Envoyer la mission</button></div>' +
-            '<p class="hint">Elle s’affiche sur la TV de ' + (id === 'tous' ? 'chaque enfant' : esc(nameOf(id))) + '. Valide-la ici une fois faite pour donner les étoiles.</p>';
-        var kidsList = id === 'tous' ? (state ? state.kids : []) : (k ? [k] : []);
-        kidsList.forEach(function (kk) {
-            (kk.quests || []).forEach(function (q) {
-                html += '<div class="quest"><span>' + (id === 'tous' ? '<small>' + esc(kk.name) + '</small> · ' : '') + esc(q.text) + '</span><b>+' + q.n + ' ★</b>' +
-                    '<button class="mini ok" data-cmd="' + kk.id + ' quete-ok ' + esc(q.id) + '" data-confirm="Mission réussie ? ' + q.n + ' étoile(s) seront données.">✓</button>' +
-                    '<button class="mini ko" data-cmd="' + kk.id + ' quete-x ' + esc(q.id) + '" data-confirm="Annuler cette mission ?">✕</button></div>';
-            });
-        });
-        html += '</section>';
+        if (id === 'tous') html += wheelSection();
+        html += questSection(id, k);
 
         if (k) {
             html += '<section><h2>Défis de la semaine (+2 ★)</h2><div class="list">' + k.challenges.map(function (c, i) {
@@ -376,6 +380,113 @@ html, body { overflow-x: hidden; }
             }).join('') : '<p class="empty">Rien pour l’instant</p>') + '</div></section>';
         }
         return html;
+    }
+
+    // ---------- Missions spéciales : qui participe, chef d'équipe, minuteur ----------
+
+    function chefStats() {
+        var c = state && state.chefs ? state.chefs : { counts: {}, last: '' }, counts = c.counts || {};
+        var best = null;
+        KIDS.forEach(function (kid) { if ((counts[kid.id] || 0) > 0 && (!best || counts[kid.id] > counts[best.id])) best = kid; });
+        return { counts: counts, last: c.last, best: best };
+    }
+
+    // Le prochain chef conseillé : parmi l'équipe, celui qui l'a été le moins souvent (et pas la dernière fois)
+    function nextChef(team) {
+        var st = chefStats(), pick = null;
+        team.forEach(function (id) {
+            var n = st.counts[id] || 0;
+            if (!pick || n < pick.n || (n === pick.n && pick.id === st.last)) pick = { id: id, n: n };
+        });
+        return pick ? pick.id : null;
+    }
+
+    function leftText(until) {
+        var m = Math.ceil((until - Date.now()) / 60000);
+        return m > 0 ? '⏱ reste ' + (m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + ('0' + m % 60).slice(-2)) : '⏱ temps écoulé';
+    }
+
+    function questSection(id, k) {
+        if (qFor !== id) { qFor = id; qTeam = id === 'tous' ? KIDS.map(function (x) { return x.id; }) : [id]; qChef = ''; }
+        var st = chefStats(), sug = qTeam.length > 1 ? nextChef(qTeam) : null;
+        var html = '<section><h2>Mission spéciale</h2><div class="field"><input id="questText" placeholder="Ex. : Ranger le salon ensemble" maxlength="60"></div>' +
+            '<p class="lbl">Qui participe ?</p><div class="btns">' + KIDS.map(function (kid) {
+                return '<button class="mini pick' + (qTeam.indexOf(kid.id) > -1 ? ' on' : '') + '" data-team="' + kid.id + '">' + esc(kid.name) + '</button>';
+            }).join('') + '</div>';
+        if (qTeam.length > 1) {
+            html += '<p class="lbl">Chef d’équipe</p><div class="btns"><button class="mini pick' + (!qChef ? ' on' : '') + '" data-chef="">Aucun</button>' +
+                qTeam.map(function (cid) {
+                    return '<button class="mini pick' + (qChef === cid ? ' on' : '') + '" data-chef="' + cid + '">👑 ' + esc(nameOf(cid)) + (cid === sug ? ' <small>(son tour)</small>' : '') + '</button>';
+                }).join('') + '<button class="mini" data-chef="?">🎲 Au hasard</button></div>' +
+                '<p class="hint">Dernier chef : <b>' + (st.last ? esc(nameOf(st.last)) : 'personne') + '</b> · Le plus souvent : <b>' +
+                (st.best ? esc(st.best.name) + ' (' + st.counts[st.best.id] + ' fois)' : 'personne') + '</b> · ' +
+                KIDS.map(function (kid) { return esc(kid.name) + ' ' + (st.counts[kid.id] || 0); }).join(' · ') + '</p>';
+        }
+        html += '<p class="lbl">Minuteur : « vous avez… pour le faire »</p><div class="btns">' + TIMERS.map(function (t) {
+            return '<button class="mini pick' + (qMin === t[0] ? ' on' : '') + '" data-min="' + t[0] + '">' + t[1] + '</button>';
+        }).join('') + '</div>' +
+            '<div class="row2">' + stepper('qn', questN) + '<button class="send" id="questSend">Envoyer la mission</button></div>' +
+            '<p class="hint">Elle s’affiche sur la TV de chaque participant' + (qMin ? ', avec le compte à rebours' : '') + '. Valide-la ici une fois faite : chacun reçoit les étoiles.</p>';
+        // missions en cours (une seule ligne par mission d'équipe)
+        var seen = {}, list = [];
+        (id === 'tous' ? (state ? state.kids : []) : (k ? [k] : [])).forEach(function (kk) {
+            (kk.quests || []).forEach(function (q) {
+                if (seen[q.id]) return;
+                seen[q.id] = 1;
+                list.push({ q: q, kid: kk });
+            });
+        });
+        list.forEach(function (x) {
+            var q = x.q, who = q.team ? q.team.map(nameOf).join(', ') : x.kid.name;
+            html += '<div class="quest"><span>' + esc(q.text) + '<small class="qmeta">' + esc(who) + (q.chef ? ' · 👑 ' + esc(nameOf(q.chef)) : '') +
+                (q.until ? ' · ' + leftText(q.until) : '') + '</small></span><b>+' + q.n + ' ★</b>' +
+                '<button class="mini ok" data-cmd="equipe-ok ' + esc(q.id) + '" data-confirm="Mission réussie ? ' + q.n + ' étoile(s) pour ' + esc(who) + '.">✓</button>' +
+                '<button class="mini ko" data-cmd="equipe-x ' + esc(q.id) + '" data-confirm="Annuler cette mission ?">✕</button></div>';
+        });
+        return html + '</section>';
+    }
+
+    // ---------- Roue du hasard ----------
+
+    function wheelSvg() {
+        var n = wheelPeople.length, step = 360 / n, out = '';
+        function pt(a, r) { a = (a - 90) * Math.PI / 180; return (100 + Math.cos(a) * r).toFixed(1) + ' ' + (100 + Math.sin(a) * r).toFixed(1); }
+        wheelPeople.forEach(function (id, i) {
+            var p = PEOPLE.filter(function (x) { return x.id === id; })[0];
+            out += '<path d="M100 100 L' + pt(i * step, 96) + ' A96 96 0 ' + (step > 180 ? 1 : 0) + ' 1 ' + pt((i + 1) * step, 96) + ' Z" fill="' + p.color + '" stroke="#fff" stroke-width="2"/>' +
+                '<text transform="rotate(' + (i * step + step / 2) + ' 100 100)" x="100" y="40" text-anchor="middle">' + esc(p.name) + '</text>';
+        });
+        return '<svg viewBox="0 0 200 200" id="wheelSvg" style="transform:rotate(' + wheelRot + 'deg)">' + out + '<circle cx="100" cy="100" r="97" fill="none" stroke="#fff" stroke-width="3"/></svg>';
+    }
+
+    function wheelSection() {
+        return '<section><h2>Roue du hasard</h2><div class="btns">' + PEOPLE.map(function (p) {
+            return '<button class="mini pick' + (wheelPeople.indexOf(p.id) > -1 ? ' on' : '') + '" data-wheel="' + p.id + '">' + esc(p.name) + '</button>';
+        }).join('') + '</div><div class="wheel"><i></i>' + wheelSvg() + '</div><div class="wheelres" id="wheelRes">' + esc(wheelResult) + '</div>' +
+            '<div class="row2"><button class="send" id="spinPhone">Tourner ici</button><button class="send alt" id="spinTv">Tourner sur la TV</button></div>' +
+            '<p class="hint">Milan et Willo par défaut ; touche un prénom pour l’ajouter ou l’enlever.</p></section>';
+    }
+
+    // Sur la TV, le résultat n'est pas dévoilé ici : tout le monde le découvre devant l'écran
+    function spin(onTv) {
+        if (wheelSpinning) return;
+        var n = wheelPeople.length, k = Math.floor(Math.random() * n), step = 360 / n, win = wheelPeople[k];
+        if (onTv) {
+            send('roue ' + wheelPeople.join(',') + ' ' + win, true);
+            wheelResult = 'La roue va tourner sur la TV dans quelques secondes…';
+            $('wheelRes').textContent = wheelResult;
+            return;
+        }
+        wheelRot = wheelRot - wheelRot % 360 + 360 * 5 + (360 - (k * step + step / 2) + (Math.random() - 0.5) * step * 0.6 + 360) % 360;
+        wheelSpinning = true;
+        wheelResult = '';
+        $('wheelRes').textContent = '';
+        $('wheelSvg').style.transform = 'rotate(' + wheelRot + 'deg)';
+        setTimeout(function () {
+            wheelSpinning = false;
+            wheelResult = 'C’est ' + PEOPLE.filter(function (p) { return p.id === win; })[0].name + ' !';
+            if ($('wheelRes')) $('wheelRes').textContent = wheelResult;
+        }, 4300);
     }
 
     function manageView() {
@@ -443,12 +554,50 @@ html, body { overflow-x: hidden; }
             return;
         }
         if (b.id === 'questSend') {
-            var q = $('questText').value.trim();
+            var q = $('questText').value.trim().replace(/\s+/g, ' ');
             if (!q) { toast('Écris d’abord la mission'); return; }
-            send(current + ' quete ' + questN + ' ' + q);
+            if (!qTeam.length) { toast('Choisis au moins un participant'); return; }
+            send('equipe ' + qTeam.join(',') + ' ' + (qTeam.length > 1 && qChef ? qChef : '-') + ' ' + questN + ' ' + qMin + ' ' + q);
             $('questText').value = '';
             return;
         }
+        var tm = b.getAttribute('data-team');
+        if (tm) {
+            var at = qTeam.indexOf(tm);
+            if (at > -1) qTeam.splice(at, 1); else qTeam = KIDS.map(function (x) { return x.id; }).filter(function (x) { return x === tm || qTeam.indexOf(x) > -1; });
+            if (qTeam.indexOf(qChef) === -1) qChef = '';
+            render();
+            return;
+        }
+        if (b.hasAttribute('data-chef')) {
+            var cv = b.getAttribute('data-chef');
+            if (cv === '?') {
+                qChef = qTeam[Math.floor(Math.random() * qTeam.length)];
+                toast('Chef d’équipe tiré au sort : ' + nameOf(qChef) + ' 👑');
+            } else qChef = cv;
+            render();
+            return;
+        }
+        if (b.hasAttribute('data-min')) {
+            qMin = +b.getAttribute('data-min');
+            render();
+            return;
+        }
+        var wp = b.getAttribute('data-wheel');
+        if (wp) {
+            if (wheelSpinning) return;
+            var wi = wheelPeople.indexOf(wp);
+            if (wi > -1) {
+                if (wheelPeople.length <= 2) { toast('Il faut au moins 2 personnes sur la roue'); return; }
+                wheelPeople.splice(wi, 1);
+            } else wheelPeople = PEOPLE.map(function (p) { return p.id; }).filter(function (x) { return x === wp || wheelPeople.indexOf(x) > -1; });
+            store('grumeaux.roue', wheelPeople.join(','));
+            wheelRot = 0;
+            wheelResult = '';
+            render();
+            return;
+        }
+        if (b.id === 'spinPhone' || b.id === 'spinTv') { spin(b.id === 'spinTv'); return; }
         if (b.id === 'msgSend') {
             var m = $('msgText').value.trim();
             if (!m) { toast('Écris d’abord le message'); return; }
@@ -481,7 +630,7 @@ html, body { overflow-x: hidden; }
         if (b.id === 'visitSend') {
             var vt = $('visitText').value.trim();
             if (!vt) { toast('Écris d’abord ton petit mot'); return; }
-            send(current + ' passage ' + sender + ' ' + vt.replace(/s+/g, ' '));
+            send(current + ' passage ' + sender + ' ' + vt.replace(/\s+/g, ' '));
             $('visitText').value = '';
             return;
         }
