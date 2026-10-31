@@ -111,6 +111,7 @@ html, body { overflow-x: hidden; }
 .share { display: flex; gap: 16px; align-items: center; }
 .share img { width: 132px; height: 132px; border-radius: 12px; background: #fff; flex: none; }
 .share p { font-size: 14px; color: var(--muted); }
+.send.danger { background: #c62f45; }
 .tvsays { font-size: 13px; background: rgba(139, 107, 255, 0.15); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
 </style>
 </head>
@@ -392,6 +393,11 @@ html, body { overflow-x: hidden; }
         });
         html += '</section>';
 
+        html += '<section><h2>Remise à zéro</h2><div class="btns">' + KIDS.map(function (kid) {
+            return '<button class="mini ko" data-reset="' + kid.id + '">Progression de ' + esc(kid.name) + '</button>';
+        }).join('') + '</div><div class="row2"><button class="send danger" data-reset="tout">Tout réinitialiser</button></div>' +
+            '<p class="hint">La progression d’un enfant : étoiles, XP, objets, coffres, badges et historique. « Tout réinitialiser » efface aussi les réglages, thèmes et anniversaires de toute la famille (la page reste reliée à la TV).</p></section>';
+
         var link = pageLink();
         html += '<section><h2>Partager l’accès</h2><div class="share"><img alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=264x264&margin=8&data=' + encodeURIComponent(link) + '">' +
             '<div><p>Fais scanner ce code par l’autre parent : la page s’ouvre déjà reliée à la TV.</p><div class="row2"><button class="send" id="copyLink">Copier le lien</button></div></div></div></section>';
@@ -446,6 +452,15 @@ html, body { overflow-x: hidden; }
             if (isNaN(v) || v < 0) { toast('Entre un nombre d’étoiles'); return; }
             if (!confirm('Mettre ' + nameOf(kidStars) + ' à ' + v + ' étoiles ?')) return;
             send(kidStars + ' etoiles ' + v);
+            return;
+        }
+        var reset = b.getAttribute('data-reset');
+        if (reset) {
+            if (reset === 'tout') {
+                var typed = prompt('Toutes les données de Grumeaux App seront effacées (étoiles, héros, réglages, anniversaires).\nÉcris RESET pour confirmer :');
+                if (!typed || typed.trim().toUpperCase() !== 'RESET') { toast('Annulé'); return; }
+            } else if (!confirm('Remettre à zéro toute la progression de ' + nameOf(reset) + ' ? (étoiles, XP, objets, coffres, badges)')) return;
+            send('reset ' + reset);
             return;
         }
         var bdId = b.getAttribute('data-bd');
