@@ -82,6 +82,35 @@ html, body { overflow-x: hidden; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 120px); background: #fff; color: #111; padding: 12px 18px; border-radius: 14px; font-weight: 600; max-width: calc(100% - 32px); transition: transform 0.25s; z-index: 10; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); }
 .toast.show { transform: translate(-50%, 0); }
 [hidden] { display: none !important; }
+
+.field { display: flex; gap: 8px; }
+.field input, .field textarea { flex: 1; min-width: 0; background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; color: var(--text); font: inherit; }
+.field textarea { resize: none; height: 70px; }
+.row2 { display: flex; gap: 8px; margin-top: 8px; align-items: stretch; }
+.row2 .send { flex: 1; height: 48px; }
+.quest { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--card2); margin-top: 8px; }
+.quest span { flex: 1; min-width: 0; }
+.quest b { color: var(--gold); white-space: nowrap; }
+.mini { height: 38px; min-width: 38px; padding: 0 10px; border-radius: 10px; font-weight: 700; background: rgba(255, 255, 255, 0.08); }
+.mini.ok { background: rgba(62, 230, 122, 0.2); color: var(--plus); }
+.mini.ko { background: rgba(255, 95, 109, 0.18); color: var(--minus); }
+.hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.mrow { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.mrow:last-child { border: 0; padding-bottom: 0; }
+.mrow .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-weight: 700; }
+.mrow .top small { color: var(--gold); font-weight: 700; }
+.btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.btns input { width: 84px; background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; height: 38px; color: var(--text); font: inherit; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 0; background: none; text-align: left; border-bottom: 1px solid var(--line); }
+.switch:last-child { border: 0; }
+.switch i { width: 50px; height: 30px; border-radius: 15px; background: rgba(255, 255, 255, 0.15); position: relative; flex: none; transition: background 0.2s; }
+.switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.switch.on i { background: var(--plus); }
+.switch.on i::after { transform: translateX(20px); }
+.share { display: flex; gap: 16px; align-items: center; }
+.share img { width: 132px; height: 132px; border-radius: 12px; background: #fff; flex: none; }
+.share p { font-size: 14px; color: var(--muted); }
+.tvsays { font-size: 13px; background: rgba(139, 107, 255, 0.15); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -121,12 +150,15 @@ html, body { overflow-x: hidden; }
     var MALUS = [[-1, 'Bêtise'], [-1, 'Dispute'], [-2, 'N’a pas écouté'], [-3, 'Grosse bêtise']];
     var CHESTS = [['bronze', 'Bronze', '#c27a3a'], ['argent', 'Argent', '#c3cad6'], ['or', 'Or', '#f4c430']];
     var KIDS = [{ id: 'milan', name: 'Milan' }, { id: 'willo', name: 'Willo' }, { id: 'rogan', name: 'Rogan' }];
+    var OPTS = [['turns', 'Tour de rôle « qui choisit »'], ['seasonal', 'Décorations de saison'], ['world', 'Décor qui grandit avec le niveau']];
+    var TABS = KIDS.concat([{ id: 'tous', name: 'Tous' }, { id: 'gestion', name: 'Gestion' }]);
 
-    var topic = '', state = null, current = 'milan', customN = 1, refreshTimer = null;
+    var topic = '', state = null, current = 'milan', customN = 1, questN = 2, refreshTimer = null, pendingOpts = {};
 
     function $(id) { return document.getElementById(id); }
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+    function pageLink() { return location.origin + location.pathname + '#' + topic; }
 
     function toast(msg) {
         var el = $('toast');
@@ -162,7 +194,7 @@ html, body { overflow-x: hidden; }
 
     $('topicSave').onclick = function () {
         var v = $('topicInput').value.trim().toLowerCase();
-        if (!/^tvperso-[a-z0-9]{6,}$/.test(v)) { toast('Le sujet doit ressembler à tvperso-abc123…'); return; }
+        if (!/^tvperso-[a-z0-9]{6,}$/.test(v)) { toast('Le code doit ressembler à tvperso-abc123…'); return; }
         store('grumeaux.topic', v);
         location.hash = v;
         location.reload();
@@ -172,13 +204,16 @@ html, body { overflow-x: hidden; }
     // Dernier état publié par la TV (gardé 12 h par ntfy)
     function loadState() {
         fetch(NTFY + topic + '-etat/json?poll=1&since=12h').then(function (r) { return r.text(); }).then(function (txt) {
-            var lines = txt.trim().split('\n').filter(Boolean), last = null;
-            lines.forEach(function (l) { try { var m = JSON.parse(l); if (m.event === 'message') last = m; } catch (e) { /* ligne ignorée */ } });
-            if (last) {
-                try { state = JSON.parse(last.message); } catch (e) { /* message illisible */ }
-            }
-            render();
+            var last = null;
+            txt.trim().split('\n').forEach(function (l) { try { var m = JSON.parse(l); if (m.event === 'message') last = m; } catch (e) { /* ligne ignorée */ } });
+            if (last) { try { state = JSON.parse(last.message); pendingOpts = {}; } catch (e) { /* message illisible */ } }
+            if (!isTyping()) render(); else renderStatus();
         }).catch(function () { setStatus('', 'Pas de connexion internet'); });
+    }
+
+    function isTyping() {
+        var a = document.activeElement;
+        return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && a.value;
     }
 
     function send(cmd, silent) {
@@ -204,8 +239,14 @@ html, body { overflow-x: hidden; }
         return m < 1 ? 'à l’instant' : m < 60 ? 'il y a ' + m + ' min' : 'il y a ' + Math.round(m / 60) + ' h';
     }
 
+    function renderStatus() {
+        if (!state) { setStatus('', 'En attente de la TV… (elle doit être allumée sur Grumeaux App)'); return; }
+        var fresh = Date.now() - state.t < 30 * 60000;
+        setStatus(fresh ? 'ok' : 'old', 'Données de la TV ' + ago(state.t) + (fresh ? '' : ' (TV éteinte ou sur une autre appli ?)'));
+    }
+
     function renderTabs() {
-        $('tabs').innerHTML = KIDS.concat([{ id: 'tous', name: 'Tous' }]).map(function (k) {
+        $('tabs').innerHTML = TABS.map(function (k) {
             return '<button data-kid="' + k.id + '" class="' + (k.id === current ? 'on' : '') + '">' + esc(k.name) + '</button>';
         }).join('');
     }
@@ -217,25 +258,41 @@ html, body { overflow-x: hidden; }
         customN = 1;
         renderTabs();
         render();
+        window.scrollTo(0, 0);
     };
 
     function kidState(id) {
-        if (!state) return null;
+        if (!state || !state.kids) return null;
         for (var i = 0; i < state.kids.length; i++) if (state.kids[i].id === id) return state.kids[i];
         return null;
+    }
+
+    function nameOf(id) {
+        for (var i = 0; i < KIDS.length; i++) if (KIDS[i].id === id) return KIDS[i].name;
+        return id;
     }
 
     function act(cls, badge, label, cmd, done) {
         return '<button class="act ' + cls + (done ? ' done' : '') + '" data-cmd="' + esc(cmd) + '"><b>' + badge + '</b><span>' + esc(label) + '</span></button>';
     }
 
-    function render() {
-        if (state) {
-            var fresh = Date.now() - state.t < 30 * 60000;
-            setStatus(fresh ? 'ok' : 'old', 'Données de la TV ' + ago(state.t) + (fresh ? '' : ' (TV éteinte ou sur une autre appli ?)'));
-        } else setStatus('', 'En attente de la TV… (elle doit être allumée sur Grumeaux App)');
+    function stepper(id, n) {
+        return '<div class="stepper"><button data-step="' + id + '" data-d="-1">−</button><span id="' + id + '">' + (n > 0 && id === 'cn' ? '+' : '') + n + '</span><button data-step="' + id + '" data-d="1">+</button></div>';
+    }
 
-        var id = current, k = kidState(id), who = id === 'tous' ? 'tous' : id, html = '';
+    function render() {
+        renderStatus();
+        var html = '';
+        if (state && state.last && Date.now() - state.last.t < 5 * 60000) html += '<div class="tvsays">📺 ' + esc(state.last.msg) + '</div>';
+        html += current === 'gestion' ? manageView() : kidView(current);
+        var keep = {};
+        ['reason', 'questText', 'msgText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
+        $('view').innerHTML = html;
+        Object.keys(keep).forEach(function (id) { if ($(id)) $(id).value = keep[id]; });
+    }
+
+    function kidView(id) {
+        var k = kidState(id), who = id, html = '';
         if (id === 'tous') {
             html += '<div class="hero"><div class="name">Toute la fratrie</div><div class="lvl">Les actions s’appliquent à Milan, Willo et Rogan.</div></div>';
         } else if (k) {
@@ -248,18 +305,29 @@ html, body { overflow-x: hidden; }
 
         html += '<section><h2>Bonus</h2><div class="grid">' + BONUS.map(function (b) { return act('plus', '+' + b[0], b[1], who + ' +' + b[0] + ' ' + b[1]); }).join('') + '</div></section>';
         html += '<section><h2>Malus</h2><div class="grid">' + MALUS.map(function (b) { return act('minus', b[0], b[1], who + ' ' + b[0] + ' ' + b[1]); }).join('') + '</div>' +
-            '<div class="custom"><div class="stepper"><button id="dec">−</button><span id="cn">' + (customN > 0 ? '+' : '') + customN + '</span><button id="inc">+</button></div>' +
-            '<input id="reason" placeholder="Raison (facultatif)" maxlength="60"><button class="send" id="customSend">OK</button></div></section>';
+            '<div class="custom">' + stepper('cn', customN) + '<input id="reason" placeholder="Raison (facultatif)" maxlength="60"><button class="send" id="customSend">OK</button></div></section>';
+
+        // Missions spontanées
+        html += '<section><h2>Mission spéciale</h2><div class="field"><input id="questText" placeholder="Ex. : Ranger le garage avec papa" maxlength="60"></div>' +
+            '<div class="row2">' + stepper('qn', questN) + '<button class="send" id="questSend">Envoyer la mission</button></div>' +
+            '<p class="hint">Elle s’affiche sur la TV de ' + (id === 'tous' ? 'chaque enfant' : esc(nameOf(id))) + '. Valide-la ici une fois faite pour donner les étoiles.</p>';
+        var kidsList = id === 'tous' ? (state ? state.kids : []) : (k ? [k] : []);
+        kidsList.forEach(function (kk) {
+            (kk.quests || []).forEach(function (q) {
+                html += '<div class="quest"><span>' + (id === 'tous' ? '<small>' + esc(kk.name) + '</small> · ' : '') + esc(q.text) + '</span><b>+' + q.n + ' ★</b>' +
+                    '<button class="mini ok" data-cmd="' + kk.id + ' quete-ok ' + esc(q.id) + '" data-confirm="Mission réussie ? ' + q.n + ' étoile(s) seront données.">✓</button>' +
+                    '<button class="mini ko" data-cmd="' + kk.id + ' quete-x ' + esc(q.id) + '" data-confirm="Annuler cette mission ?">✕</button></div>';
+            });
+        });
+        html += '</section>';
 
         if (k) {
             html += '<section><h2>Défis de la semaine (+2 ★)</h2><div class="list">' + k.challenges.map(function (c, i) {
                 return act('plus', c.done ? '✓' : '+2', c.text, who + ' defi ' + (i + 1), c.done);
             }).join('') + act('plus', '↻', 'Tirer 3 nouveaux défis', who + ' nouveaux') + '</div></section>';
             html += '<section><h2>Mission du jour (+1 ★)</h2><div class="list">' + act('plus', k.mission.done ? '✓' : '+1', k.mission.text, who + ' mission', k.mission.done) + '</div></section>';
-        } else if (id !== 'tous') {
-            html += '<section><h2>Défis et mission</h2><div class="list">' + act('plus', '+1', 'Valider la mission du jour', who + ' mission') + '</div></section>';
         } else {
-            html += '<section><h2>Mission du jour (+1 ★)</h2><div class="list">' + act('plus', '+1', 'Valider la mission de chacun', 'tous mission') + '</div></section>';
+            html += '<section><h2>Mission du jour (+1 ★)</h2><div class="list">' + act('plus', '+1', id === 'tous' ? 'Valider la mission de chacun' : 'Valider la mission du jour', who + ' mission') + '</div></section>';
         }
 
         html += '<section><h2>Offrir un coffre</h2><div class="chests">' + CHESTS.map(function (c) {
@@ -267,41 +335,107 @@ html, body { overflow-x: hidden; }
                 (k ? '<small>en stock : ' + (k.chests[c[0]] || 0) + '</small>' : '') + '</button>';
         }).join('') + '</div></section>';
 
+        html += '<section><h2>Message sur la TV</h2><div class="field"><textarea id="msgText" placeholder="Ex. : Bravo pour ton bulletin !" maxlength="140"></textarea></div>' +
+            '<div class="row2"><button class="send" id="msgSend">Envoyer à ' + (id === 'tous' ? 'tous' : esc(nameOf(id))) + '</button></div></section>';
+
         if (k) {
             html += '<section><h2>Derniers bonus et malus</h2><div class="log">' + (k.log.length ? k.log.map(function (e) {
                 return '<div><span>' + esc(e.why) + '</span><span class="' + (e.n < 0 ? 'm' : 'p') + '">' + (e.n > 0 ? '+' : '') + e.n + ' ★</span></div>';
             }).join('') : '<p class="empty">Rien pour l’instant</p>') + '</div></section>';
         }
-
-        var keep = $('reason') ? $('reason').value : '';
-        $('view').innerHTML = html;
-        $('reason').value = keep;
+        return html;
     }
 
-    function nameOf(id) {
-        for (var i = 0; i < KIDS.length; i++) if (KIDS[i].id === id) return KIDS[i].name;
-        return id;
+    function manageView() {
+        var html = '<section><h2>Corrections</h2>';
+        KIDS.forEach(function (kid) {
+            var k = kidState(kid.id);
+            html += '<div class="mrow"><div class="top"><span>' + esc(kid.name) + '</span><small>' + (k ? '★ ' + k.stars : '') + '</small></div><div class="btns">' +
+                '<input type="number" min="0" inputmode="numeric" id="st-' + kid.id + '" placeholder="★" value="' + (k ? k.stars : '') + '">' +
+                '<button class="mini" data-stars="' + kid.id + '">Fixer les étoiles</button>' +
+                '<button class="mini ko" data-cmd="' + kid.id + ' annuler" data-confirm="Annuler la dernière action de ' + kid.name + (k && k.log[0] ? ' (« ' + esc(k.log[0].why) + ' »)' : '') + ' ?">Annuler la dernière action</button>' +
+                CHESTS.map(function (c) {
+                    return '<button class="mini" data-cmd="' + kid.id + ' coffre-retire ' + c[0] + '" data-confirm="Retirer un coffre ' + c[1].toLowerCase() + ' à ' + kid.name + ' ?">− ' + c[1] + (k ? ' (' + (k.chests[c[0]] || 0) + ')' : '') + '</button>';
+                }).join('') + '</div></div>';
+        });
+        html += '</section>';
+
+        html += '<section><h2>Réglages de la TV</h2>';
+        OPTS.forEach(function (o) {
+            var on = o[0] in pendingOpts ? pendingOpts[o[0]] : !!(state && state.opts && state.opts[o[0]]);
+            html += '<button class="switch' + (on ? ' on' : '') + '" data-opt="' + o[0] + '"' + (state && state.opts ? '' : ' disabled') + '><span>' + o[1] + '</span><i></i></button>';
+        });
+        html += '</section>';
+
+        var link = pageLink();
+        html += '<section><h2>Partager l’accès</h2><div class="share"><img alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=264x264&margin=8&data=' + encodeURIComponent(link) + '">' +
+            '<div><p>Fais scanner ce code par l’autre parent : la page s’ouvre déjà reliée à la TV.</p><div class="row2"><button class="send" id="copyLink">Copier le lien</button></div></div></div></section>';
+        return html;
     }
 
     $('view').onclick = function (e) {
         var b = e.target.closest('button');
         if (!b) return;
-        if (b.id === 'dec' || b.id === 'inc') {
-            customN += b.id === 'inc' ? 1 : -1;
-            if (customN === 0) customN = b.id === 'inc' ? 1 : -1;
-            customN = Math.max(-10, Math.min(10, customN));
-            $('cn').textContent = (customN > 0 ? '+' : '') + customN;
+        var step = b.getAttribute('data-step');
+        if (step) {
+            var d = +b.getAttribute('data-d');
+            if (step === 'cn') {
+                customN += d;
+                if (customN === 0) customN = d;
+                customN = Math.max(-10, Math.min(10, customN));
+                $('cn').textContent = (customN > 0 ? '+' : '') + customN;
+            } else {
+                questN = Math.max(1, Math.min(10, questN + d));
+                $('qn').textContent = questN;
+            }
             return;
         }
         if (b.id === 'customSend') {
-            var who = current === 'tous' ? 'tous' : current, why = $('reason').value.trim();
-            send(who + ' ' + (customN > 0 ? '+' : '') + customN + (why ? ' ' + why : ''));
+            var why = $('reason').value.trim();
+            send(current + ' ' + (customN > 0 ? '+' : '') + customN + (why ? ' ' + why : ''));
             $('reason').value = '';
+            return;
+        }
+        if (b.id === 'questSend') {
+            var q = $('questText').value.trim();
+            if (!q) { toast('Écris d’abord la mission'); return; }
+            send(current + ' quete ' + questN + ' ' + q);
+            $('questText').value = '';
+            return;
+        }
+        if (b.id === 'msgSend') {
+            var m = $('msgText').value.trim();
+            if (!m) { toast('Écris d’abord le message'); return; }
+            send(current + ' message ' + m.replace(/\s+/g, ' '));
+            $('msgText').value = '';
+            return;
+        }
+        if (b.id === 'copyLink') {
+            var link = pageLink();
+            (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { toast('Lien copié'); }, function () { prompt('Copie ce lien :', link); });
+            return;
+        }
+        var kidStars = b.getAttribute('data-stars');
+        if (kidStars) {
+            var v = parseInt($('st-' + kidStars).value, 10);
+            if (isNaN(v) || v < 0) { toast('Entre un nombre d’étoiles'); return; }
+            if (!confirm('Mettre ' + nameOf(kidStars) + ' à ' + v + ' étoiles ?')) return;
+            send(kidStars + ' etoiles ' + v);
+            return;
+        }
+        var opt = b.getAttribute('data-opt');
+        if (opt) {
+            var on = !b.classList.contains('on');
+            pendingOpts[opt] = on;
+            b.classList.toggle('on', on);
+            send('reglage ' + opt + ' ' + (on ? 'on' : 'off'));
             return;
         }
         var cmd = b.getAttribute('data-cmd');
         if (!cmd) return;
         if (b.classList.contains('done')) { toast('Déjà validé'); return; }
+        var ask = b.getAttribute('data-confirm');
+        if (ask && !confirm(ask)) return;
         send(cmd);
         b.style.outline = '2px solid var(--accent)';
     };
