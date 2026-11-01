@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Lecteur Grumeaux</title>
+<style>
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+#p { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+// Lecteur des vidéos ajoutées par les parents, ouvert par l'appli de la TV dans un cadre plein écran.
+// La TV envoie des commandes (lecture, pause, avancer) et reçoit l'état et l'avancement de la vidéo.
+(function () {
+    'use strict';
+    var id = (/^#([\w-]{11})$/.exec(location.hash) || [])[1], player = null;
+
+    function send(m) { if (window.parent !== window) window.parent.postMessage(JSON.stringify(m), '*'); }
+
+    window.onYouTubeIframeAPIReady = function () {
+        if (!id) { send({ yt: 'error', code: 'id' }); return; }
+        player = new YT.Player('p', {
+            videoId: id, width: '100%', height: '100%',
+            playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, iv_load_policy: 3, fs: 0, disablekb: 1, playsinline: 1, cc_load_policy: 0, hl: 'fr' },
+            events: {
+                onReady: function () { player.playVideo(); },
+                onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
+                onError: function (e) { send({ yt: 'error', code: e.data }); }
+            }
+        });
+        setInterval(function () {
+            if (player && player.getCurrentTime) send({ yt: 'time', t: player.getCurrentTime(), d: player.getDuration(), s: player.getPlayerState() });
+        }, 500);
+    };
+
+    window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || !player || !player.getPlayerState) return;
+        var m;
+        try { m = JSON.parse(e.data); } catch (x) { return; }
+        if (!m || !m.cmd) return;
+        if (m.cmd === 'toggle') { if (player.getPlayerState() === 1) player.pauseVideo(); else player.playVideo(); }
+        else if (m.cmd === 'play') player.playVideo();
+        else if (m.cmd === 'pause') player.pauseVideo();
+        else if (m.cmd === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + (+m.v || 0)), true);
+    });
+})();
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

@@ -118,6 +118,7 @@ html, body { overflow-x: hidden; }
 .lbl { font-size: 13px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
 .mini small { font-weight: 500; opacity: 0.75; }
 .dlc { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 16px; background: var(--card2); margin-top: 8px; }
+.vthumb { flex: none; width: 96px; height: 54px; border-radius: 10px; object-fit: cover; background: #000; }
 .dlcart { flex: none; width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 32px; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25); }
 .dlcinfo { flex: 1; min-width: 0; }
 .dlcinfo b { display: block; font-size: 16px; }
@@ -358,6 +359,20 @@ html, body { overflow-x: hidden; }
 
     // Nouveautés : la plus récente en premier ; le bandeau reste affiché tant qu'elle n'a pas été lue
     var CHANGELOG = [
+        { v: '2026-11-01b', d: '1er novembre 2026', t: 'Vidéos des parents et DLC à plusieurs', items: [
+            'Nouvelle section « Vidéos YouTube » : une vidéo devient une récompense. Colle le lien (le titre se remplit tout seul), puis 🎁 offre-la (débloquée tout de suite, avec une célébration sur la TV) ou mets-la en 🛒 boutique : l’enfant la débloque avec 15 ★ (sans perdre de niveau).',
+            'Sur la TV, une grande tuile rouge « Vidéos » à côté de Netflix. Seules ces vidéos peuvent être lues : pas de recherche, pas de vidéos suggérées.',
+            'Sur la TV : OK pour pause / lecture, ◀ ▶ pour reculer ou avancer de 10 secondes, Retour pour arrêter. À la fin, on revient à la liste.',
+            'Les tuiles YouTube et Prime Video sont retirées des profils de Milan, Willo et Rogan (elles peuvent être remises dans les réglages de la TV).',
+            'Quiz, pendu et leçons : on peut cocher plusieurs DLC à la fois, puis « ▶ Jouer ». Rien de coché = tout mélangé. Le choix est retenu pour la fois suivante.'
+        ] },
+        { v: '2026-11-01', d: '1er novembre 2026', t: 'Quiz et pendu en DLC, culture G, roue réglable', items: [
+            'Quiz culture & fun : toutes les questions sont rangées en 20 DLC (Culture G, Minecraft, Gaming, L’espace, Grèce antique…), avec le record de chaque enfant.',
+            'Nouveaux quiz de culture générale : Culture G, Le tour du monde, Vive la France, Champions du sport et Arts & musique (76 nouvelles questions).',
+            'Le pendu : choisis ton DLC de mots (Animaux, Espace, Jeux vidéo…) et suis combien de mots tu as déjà trouvés. Les mots pas encore trouvés sortent en priorité.',
+            'Pendant un quiz ou une révision, on ne tombe plus jamais deux fois sur la même question.',
+            'Roue « On regarde quoi ? » : YouTube et Prime Video sont retirés, et on choisit les applis sur la roue directement sur la TV (le choix est retenu).'
+        ] },
         { v: '2026-10-31', d: '31 octobre 2026', t: 'DLC, 8 thèmes et quiz fun', items: [
             'Leçons & DLC : crée des packs de questions avec un titre fun (bouton 🎲), une image et une couleur. Sur la TV, ils apparaissent comme des boîtes de jeu avec le % de questions maîtrisées.',
             'Import / export de fichiers : 📂 Importer un fichier .txt (une ligne « question | réponse ») ou .json, ⬇ Exporter un DLC ou tout, 📄 Fichier modèle prêt à remplir.',
@@ -378,10 +393,11 @@ html, body { overflow-x: hidden; }
     function changelogItems(c) { return '<ul>' + c.items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>'; }
 
     function newsBanner() {
-        var c = CHANGELOG[0];
-        if (newsSeen >= c.v) return '';
-        return '<section class="news"><h2>Nouveautés <em>NOUVEAU</em></h2><p class="hint" style="margin:0">' + esc(c.d) + ' — ' + esc(c.t) + '</p>' +
-            changelogItems(c) + '<div class="row2"><button class="send" id="newsOk">J’ai vu</button></div></section>';
+        var fresh = CHANGELOG.filter(function (c) { return c.v > newsSeen; });
+        if (!fresh.length) return '';
+        return '<section class="news"><h2>Nouveautés <em>NOUVEAU</em></h2>' + fresh.map(function (c) {
+            return '<p class="hint" style="margin:0">' + esc(c.d) + ' — ' + esc(c.t) + '</p>' + changelogItems(c);
+        }).join('') + '<div class="row2"><button class="send" id="newsOk">J’ai vu</button></div></section>';
     }
 
     function changelogSection() {
@@ -397,7 +413,7 @@ html, body { overflow-x: hidden; }
         if (state && state.last && Date.now() - state.last.t < 5 * 60000) html += '<div class="tvsays">📺 ' + esc(state.last.msg) + '</div>';
         html += current === 'gestion' ? manageView() : kidView(current);
         var keep = {};
-        ['reason', 'questText', 'msgText', 'visitText', 'lessonQ', 'lessonA', 'dlcTitle', 'dlcSubject', 'dlcText'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
+        ['reason', 'questText', 'msgText', 'visitText', 'lessonQ', 'lessonA', 'dlcTitle', 'dlcSubject', 'dlcText', 'videoUrl', 'videoName'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
         $('view').innerHTML = html;
         Object.keys(keep).forEach(function (id) { if ($(id)) $(id).value = keep[id]; });
     }
@@ -420,7 +436,7 @@ html, body { overflow-x: hidden; }
 
         if (id === 'tous') html += wheelSection();
         html += questSection(id, k);
-        html += revSection(id, k) + lessonSection(id);
+        html += revSection(id, k) + lessonSection(id) + videoSection(id);
 
         if (k) {
             html += '<section><h2>Défis de la semaine (+2 ★)</h2><div class="list">' + k.challenges.map(function (c, i) {
@@ -621,8 +637,11 @@ html, body { overflow-x: hidden; }
         fetch(NTFY + topic + '-lecons/json?poll=1&since=all').then(function (r) { return r.text(); }).then(function (txt) {
             var msgs = [], index = null, cards = [];
             txt.trim().split('\n').forEach(function (l) { try { var m = JSON.parse(l); if (m.event === 'message') msgs.push(JSON.parse(m.message)); } catch (e) { /* ligne ignorée */ } });
+            var vids = null;
+            msgs.forEach(function (b) { if (b.kind === 'videos' && (!vids || b.t >= vids.t)) vids = b; });
+            if (vids) videos = vids.list.map(function (a) { return { id: a[0], who: a[1], yt: a[2], title: a[3], price: a[4] === undefined ? VIDEO_PRICE : a[4] }; });
             msgs.forEach(function (b) { if (b.kind === 'index' && (!index || b.t >= index.t)) index = b; });
-            if (!index) return;
+            if (!index) { if (vids && !isTyping()) render(); return; }
             packs = index.packs.map(function (a) {
                 var p = { id: a[0], who: a[1], img: a[2], color: a[3], title: a[4], v: a[5] }, parts = {}, of = 0;
                 msgs.forEach(function (b) { if (b.kind === 'pack' && b.id === p.id && b.v === p.v) { parts[b.part] = b.cards; of = b.of; } });
@@ -634,6 +653,45 @@ html, body { overflow-x: hidden; }
             if (!isTyping()) render();
         }).catch(function () { /* hors ligne */ });
     }
+
+    // ---------- Vidéos : seules celles ajoutées ici peuvent être regardées sur la TV ----------
+
+    var videos = [], VIDEO_PRICE = 15;
+
+    // Identifiant YouTube depuis un lien (watch?v=, youtu.be/, shorts/, embed/, live/) ou tel quel
+    function ytId(s) {
+        s = (s || '').trim();
+        if (/^[\w-]{11}$/.test(s)) return s;
+        var m = /(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/.exec(s);
+        return m ? m[1] : '';
+    }
+
+    function videoSection(id) {
+        var mine = videos.filter(function (v) { return id === 'tous' || v.who === id || v.who === 'tous'; }).slice().reverse();
+        var html = '<section><h2>Vidéos YouTube</h2><p class="hint" style="margin:0 0 10px">Une vidéo est une récompense : <b>🎁 offre-la</b> (débloquée tout de suite, avec une célébration sur la TV) ou mets-la en <b>🛒 boutique</b> : l’enfant la débloque avec ' + VIDEO_PRICE + ' ★. La TV ne lit que ces vidéos : pas de recherche, pas de vidéos suggérées.</p>';
+        mine.forEach(function (v) {
+            html += '<div class="dlc"><img class="vthumb" alt="" src="https://i.ytimg.com/vi/' + esc(v.yt) + '/mqdefault.jpg"><div class="dlcinfo"><b>' + esc(v.title) + '</b>' +
+                '<small>' + (v.price ? '🛒 Boutique · ' + v.price + ' ★' : '🎁 Offerte') + ' · pour ' + esc(whoLabel(v.who)) + '</small><div class="btns"><a class="mini" style="display:inline-grid;place-items:center;text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=' + esc(v.yt) + '">▶ Voir</a>' +
+                (v.price ? '<button class="mini ok" data-cmd="video-cadeau ' + esc(v.who) + ' ' + esc(v.yt) + ' ' + esc(v.title) + '" data-confirm="Offrir « ' + esc(v.title) + ' » sans payer d’étoiles ?">🎁 Offrir</button>' : '') +
+                '<button class="mini ko" data-cmd="video-x ' + esc(v.id) + '" data-confirm="Retirer « ' + esc(v.title) + ' » de la TV ?">✕ Retirer</button></div></div></div>';
+        });
+        if (!mine.length) html += '<p class="empty">Aucune vidéo pour l’instant.</p>';
+        return html + '<p class="lbl" style="margin-top:14px">Ajouter une vidéo</p>' +
+            '<div class="field"><input id="videoUrl" placeholder="Lien YouTube (partager → copier le lien)" inputmode="url" autocomplete="off"></div>' +
+            '<div class="field" style="margin-top:8px"><input id="videoName" placeholder="Titre (rempli tout seul)" maxlength="60"></div>' +
+            '<div class="row2"><button class="send" id="videoAdd" data-gift="1">🎁 Offrir à ' + (id === 'tous' ? 'tous' : esc(nameOf(id))) + '</button>' +
+            '<button class="send" id="videoShop">🛒 Boutique (' + VIDEO_PRICE + ' ★)</button></div></section>';
+    }
+
+    // Titre trouvé automatiquement dès qu'un lien valable est collé
+    $('view').addEventListener('input', function (e) {
+        if (e.target.id !== 'videoUrl') return;
+        var vid = ytId(e.target.value);
+        if (!vid || $('videoName').value) return;
+        fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + vid)).then(function (r) { return r.json(); }).then(function (o) {
+            if ($('videoName') && !$('videoName').value && ytId($('videoUrl').value) === vid) $('videoName').value = (o.title || '').slice(0, 60);
+        }).catch(function () { /* titre à écrire à la main */ });
+    });
 
     // ---------- DLC : packs de questions avec un titre fun et une image ----------
 
@@ -978,6 +1036,16 @@ html, body { overflow-x: hidden; }
             return;
         }
         if (b.id === 'spinPhone' || b.id === 'spinTv') { spin(b.id === 'spinTv'); return; }
+        if (b.id === 'videoAdd' || b.id === 'videoShop') {
+            var vy = ytId($('videoUrl').value), vn = $('videoName').value.replace(/\s+/g, ' ').trim() || 'Vidéo';
+            if (!vy) { toast('Lien YouTube non reconnu'); return; }
+            send((b.id === 'videoAdd' ? 'video-cadeau ' : 'video ') + current + ' ' + vy + ' ' + vn);
+            $('videoUrl').value = '';
+            $('videoName').value = '';
+            setTimeout(loadLessons, 8000);
+            setTimeout(loadLessons, 25000);
+            return;
+        }
         if (b.id === 'lessonAdd') {
             var lq = $('lessonQ').value.replace(/[|\s]+/g, ' ').trim(), la = $('lessonA').value.replace(/[|\s]+/g, ' ').trim();
             if (!lq || !la) { toast('Écris la question et la réponse'); return; }
