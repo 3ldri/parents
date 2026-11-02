@@ -159,6 +159,9 @@ html, body { overflow-x: hidden; }
 .cl summary small { color: var(--muted); font-weight: 400; margin-left: 6px; }
 .cl ul, .news ul { margin: 4px 0 8px; padding-left: 20px; font-size: 14px; line-height: 1.45; }
 .cl li, .news li { margin-bottom: 4px; }
+.vshots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.vshots a { text-decoration: none; color: var(--text); font-size: 13px; font-weight: 600; }
+.vshots img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: top; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 4px; background: #000; }
 </style>
 </head>
 <body>
@@ -359,6 +362,12 @@ html, body { overflow-x: hidden; }
 
     // Nouveautés : la plus récente en premier ; le bandeau reste affiché tant qu'elle n'a pas été lue
     var CHANGELOG = [
+        { v: '2026-11-02', d: '2 novembre 2026', t: 'Boutique du jour, nouveaux objets et page vitrine', items: [
+            'Page héros : nouvelle « Boutique du jour ». Chaque jour, 6 objets tirés au hasard (2 communs, 2 rares, 1 épique, 1 légendaire), dont un à -50 %. Prix : 6, 12, 20 ou 35 ★. Les étoiles dépensées ne font pas perdre de niveau.',
+            '40 nouveaux objets : collections chevalier, glace et phénix, plus des tenues du quotidien. Ils sortent aussi des coffres.',
+            'Nouvelle médaille « Client fidèle » : acheter 5 objets à la boutique.',
+            'Onglet Gestion : nouvelle section « Page vitrine ». C’est une page de présentation de l’appli avec des captures d’écran. Ouvre-la ou partage son lien à tes amis et collègues : elle ne donne aucun accès à la télécommande.'
+        ] },
         { v: '2026-11-01c', d: '1er novembre 2026', t: 'Case « Tout mélanger » et légende des médailles', items: [
             'Quiz, pendu et leçons : une case « Tout mélanger » en premier sur chaque étagère lance directement une partie avec tous les DLC mélangés.',
             'Page héros : nouvelle ligne « Mes médailles » qui ouvre la légende des 25 médailles, avec ce qu’il faut faire pour gagner chacune et celles déjà obtenues.'
@@ -420,6 +429,21 @@ html, body { overflow-x: hidden; }
         ['reason', 'questText', 'msgText', 'visitText', 'lessonQ', 'lessonA', 'dlcTitle', 'dlcSubject', 'dlcText', 'videoUrl', 'videoName'].forEach(function (id) { if ($(id)) keep[id] = $(id).value; });
         $('view').innerHTML = html;
         Object.keys(keep).forEach(function (id) { if ($(id)) $(id).value = keep[id]; });
+    }
+
+    // Page de présentation publique (sans le code de la TV) à montrer aux amis et collègues
+    var VITRINE_SHOTS = [['accueil', 'L’accueil de chaque enfant'], ['heros', 'Son héros à faire grandir'], ['boutique', 'La boutique du jour'], ['pendu', 'Des mini-jeux pour réviser'], ['medailles', '26 médailles à gagner'], ['telephone', 'Tout se pilote depuis le téléphone']];
+
+    function vitrineLink() { return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'vitrine.html'; }
+
+    function vitrineView() {
+        return '<section><h2>Page vitrine</h2><p class="hint" style="margin:0 0 12px">Une page de présentation de l’appli, avec des captures d’écran, pour la montrer à tes collègues et amis. ' +
+            'Elle ne contient pas le code de liaison avec la TV : la partager ne donne aucun accès à la télécommande.</p>' +
+            '<div class="row2"><a class="send" style="display:grid;place-items:center;text-decoration:none" href="vitrine.html" target="_blank" rel="noopener">👀 Ouvrir la vitrine</a>' +
+            '<button class="send alt" id="vitrineShare">🔗 Partager le lien</button></div></section>' +
+            '<section><h2>Aperçu de la vitrine</h2><div class="vshots">' + VITRINE_SHOTS.map(function (s) {
+                return '<a href="vitrine.html" target="_blank" rel="noopener"><img src="vitrine/' + s[0] + '.jpg" alt="" loading="lazy"><span>' + s[1] + '</span></a>';
+            }).join('') + '</div></section>';
     }
 
     function kidView(id) {
@@ -584,7 +608,7 @@ html, body { overflow-x: hidden; }
     }
 
     function manageView() {
-        var html = changelogSection() + '<section><h2>Corrections</h2>';
+        var html = changelogSection() + vitrineView() + '<section><h2>Corrections</h2>';
         KIDS.forEach(function (kid) {
             var k = kidState(kid.id);
             html += '<div class="mrow"><div class="top"><span>' + esc(kid.name) + '</span><small>' + (k ? '★ ' + k.stars : '') + '</small></div><div class="btns">' +
@@ -974,6 +998,13 @@ html, body { overflow-x: hidden; }
     $('view').onclick = function (e) {
         var b = e.target.closest('button');
         if (!b) return;
+        if (b.id === 'vitrineShare') {
+            var url = vitrineLink();
+            if (navigator.share) navigator.share({ title: 'Grumeaux App', text: 'Notre appli TV faite maison', url: url }).catch(function () { /* partage annulé */ });
+            else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { toast('Lien copié ✓'); }, function () { toast(url); });
+            else toast(url);
+            return;
+        }
         if (dlcClick(b)) return;
         var step = b.getAttribute('data-step');
         if (step) {

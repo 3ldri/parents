@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1e">
+<title>Grumeaux App · La TV de la famille</title>
+<meta name="description" content="Une appli maison pour la TV Samsung : chaque enfant a son profil, son héros à faire évoluer, des mini-jeux pour réviser, et les parents pilotent tout depuis leur téléphone.">
+<style>
+:root {
+    --bg: #0d0b1e; --card: #1a1733; --card2: #241f45; --line: rgba(255, 255, 255, 0.08);
+    --text: #f4f5fb; --muted: rgba(244, 245, 251, 0.66); --gold: #ffd34d; --accent: #8b6bff;
+    --rainbow: linear-gradient(90deg, #ff4d6d, #ffb627, #3ee67a, #3db8ff, #a45cff);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow-x: hidden; }
+body { background: var(--bg); color: var(--text); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: inherit; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+.top { padding: 56px 0 40px; text-align: center; background: radial-gradient(ellipse at top, rgba(139, 107, 255, 0.35), transparent 70%); }
+.logo { width: 76px; height: 76px; }
+.top h1 { font-size: clamp(34px, 7vw, 56px); font-weight: 900; line-height: 1.1; margin: 14px 0 10px; }
+.top h1 span { background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.top p { max-width: 640px; margin: 0 auto; color: var(--muted); font-size: 19px; }
+.bar { height: 4px; background: var(--rainbow); }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 22px; }
+.pills span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; font-size: 14px; font-weight: 600; }
+
+.shot { display: block; width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5); cursor: zoom-in; background: #000; }
+.lead { margin: 40px 0 0; }
+
+.feature { display: grid; grid-template-columns: 1.35fr 1fr; gap: 32px; align-items: center; padding: 44px 0; border-bottom: 1px solid var(--line); }
+.feature.rev { grid-template-columns: 1fr 1.35fr; }
+.feature.rev .txt { order: -1; }
+.feature h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; }
+.feature .kicker { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.feature p { color: var(--muted); }
+.feature ul { margin: 12px 0 0 20px; color: var(--muted); }
+.feature li { margin-bottom: 4px; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.phone { display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: center; padding: 44px 0; border-bottom: 1px solid var(--line); }
+.phone .shot { max-width: 300px; margin: 0 auto; border-radius: 28px; }
+
+.how { padding: 44px 0; }
+.how h2 { font-size: 28px; font-weight: 800; margin-bottom: 18px; text-align: center; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { background: var(--card); border-radius: 20px; padding: 20px; }
+.card b { display: block; font-size: 18px; margin-bottom: 6px; }
+.card p { color: var(--muted); font-size: 15px; }
+.card .n { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; font-weight: 900; margin-bottom: 10px; }
+
+footer { text-align: center; color: var(--muted); font-size: 14px; padding: 30px 16px 50px; }
+
+.zoom { position: fixed; inset: 0; z-index: 9; background: rgba(5, 4, 14, 0.94); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+.zoom img { max-width: 100%; max-height: 100%; border-radius: 12px; }
+[hidden] { display: none !important; }
+
+@media (max-width: 760px) {
+    .feature, .feature.rev, .phone { grid-template-columns: 1fr; gap: 18px; padding: 32px 0; }
+    .feature.rev .txt { order: 0; }
+    .cards { grid-template-columns: 1fr; }
+    .top { padding-top: 40px; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+    <div class="wrap">
+        <svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4d6d"/><stop offset=".25" stop-color="#ffb627"/><stop offset=".5" stop-color="#3ee67a"/><stop offset=".75" stop-color="#3db8ff"/><stop offset="1" stop-color="#a45cff"/></linearGradient></defs><path d="M256 128 L176 52 M256 128 L340 44" stroke="#fff" stroke-width="18" stroke-linecap="round"/><rect x="48" y="112" width="416" height="338" rx="74" fill="url(#g)"/><rect x="92" y="150" width="328" height="226" rx="34" fill="#1a1440"/></svg>
+        <h1><span>Grumeaux App</span><br>la TV de la famille</h1>
+        <p>Une appli faite maison pour notre TV Samsung. Chaque enfant a son profil et un héros qui progresse grâce à ses efforts. Il y a des mini-jeux pour réviser, et les parents pilotent tout depuis leur téléphone.</p>
+        <div class="pills"><span>📺 TV Samsung (Tizen)</span><span>📱 Page parents sur téléphone</span><span>🧒 3 enfants, 2 parents</span><span>🛠️ 100 % fait maison</span></div>
+    </div>
+</header>
+<div class="bar"></div>
+
+<main class="wrap">
+    <img class="shot lead" src="vitrine/accueil.jpg" alt="Écran d’accueil : horloge, météo, Netflix, Disney+ et le héros de l’enfant" loading="lazy">
+
+    <div class="feature">
+        <img class="shot" src="vitrine/profils.jpg" alt="Choix du profil « Qui regarde ? »" loading="lazy">
+        <div class="txt">
+            <div class="kicker">Un écran par personne</div>
+            <h2>« Qui regarde ? »</h2>
+            <p>Au démarrage, chacun choisit son profil. L’accueil s’adapte à chacun : ses applis, son fond d’écran, la météo et les anniversaires à venir.</p>
+            <ul>
+                <li>Les enfants ne voient que les applis autorisées</li>
+                <li>Une roue désigne qui choisit le programme du soir</li>
+                <li>Un décor qui grandit avec le niveau de l’enfant</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature rev">
+        <img class="shot" src="vitrine/heros.jpg" alt="Page du héros avec ses statistiques, défis et badges" loading="lazy">
+        <div class="txt">
+            <div class="kicker">La motivation</div>
+            <h2>Un héros à faire grandir</h2>
+            <p>Ranger sa chambre, faire ses devoirs, aider à la maison : chaque effort rapporte des étoiles. Les étoiles font monter le héros de niveau et ouvrent des coffres pleins d’objets.</p>
+            <ul>
+                <li>3 défis par semaine et une mission par jour</li>
+                <li>Plus de 230 objets à collectionner, du commun au légendaire</li>
+                <li>Des animaux à soigner et des montures</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature">
+        <div class="duo">
+            <img class="shot" src="vitrine/boutique.jpg" alt="Boutique du jour avec 6 objets dont un à -50 %" loading="lazy">
+            <img class="shot" src="vitrine/coffres.jpg" alt="Coffres de bronze, d’argent et d’or" loading="lazy">
+        </div>
+        <div class="txt">
+            <div class="kicker">Récompenses</div>
+            <h2>Coffres et boutique du jour</h2>
+            <p>Chaque jour, une nouvelle boutique propose 6 objets, dont un à moitié prix. Les coffres de bronze, d’argent et d’or réservent des surprises. Dépenser ses étoiles ne fait jamais perdre de niveau.</p>
+        </div>
+    </div>
+
+    <div class="feature rev">
+        <img class="shot" src="vitrine/medailles.jpg" alt="Légende des médailles" loading="lazy">
+        <div class="txt">
+            <div class="kicker">Objectifs</div>
+            <h2>26 médailles à gagner</h2>
+            <p>Il y en a pour réussir 10 défis, rester sage 7 jours, ou finir les 12 travaux d’Hercule. La légende montre clairement ce qu’il reste à accomplir.</p>
+        </div>
+    </div>
+
+    <div class="feature">
+        <div class="duo">
+            <img class="shot" src="vitrine/jeux.jpg" alt="Menu des mini-jeux" loading="lazy">
+            <img class="shot" src="vitrine/pendu.jpg" alt="Étagère de DLC du pendu" loading="lazy">
+        </div>
+        <div class="txt">
+            <div class="kicker">Apprendre en jouant</div>
+            <h2>Des mini-jeux qui font réviser</h2>
+            <p>Défi maths, pendu, memory et quiz de culture générale, avec une « révision du jour » adaptée au niveau scolaire. Les questions sont rangées en DLC thématiques (espace, dinos, Grèce antique, Minecraft…), qu’on peut aussi tout mélanger.</p>
+            <ul>
+                <li>Les parents peuvent créer leurs propres leçons</li>
+                <li>Jamais deux fois la même question dans une partie</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="feature rev">
+        <img class="shot" src="vitrine/combat.jpg" alt="Choix de l’adversaire pour un combat de héros" loading="lazy">
+        <div class="txt">
+            <div class="kicker">Aventure</div>
+            <h2>Combats de héros</h2>
+            <p>L’équipement compte vraiment : il donne des points de vie, d’attaque et de défense. On affronte des monstres de plus en plus forts, jusqu’au Dragon ancien, ou on défie son frère ou sa sœur.</p>
+        </div>
+    </div>
+
+    <div class="phone">
+        <img class="shot" src="vitrine/telephone.jpg" alt="Page parents sur téléphone" loading="lazy">
+        <div class="feature" style="display:block;border:0;padding:0">
+            <div class="kicker">Côté parents</div>
+            <h2>Tout se pilote depuis le téléphone</h2>
+            <p>Une simple page web, sans appli à installer. On y donne un bonus ou un malus en un geste, n’importe où, et la TV l’applique en quelques secondes.</p>
+            <ul>
+                <li>Missions spéciales, messages d’encouragement, minuteur d’écran</li>
+                <li>Suivi des révisions par matière</li>
+                <li>Vidéos YouTube choisies par les parents, offertes en récompense</li>
+                <li>Leçons et DLC de questions faits maison</li>
+            </ul>
+        </div>
+    </div>
+
+    <section class="how">
+        <h2>Comment ça marche ?</h2>
+        <div class="cards">
+            <div class="card"><div class="n">1</div><b>Une appli TV</b><p>Une application web installée sur la TV Samsung (système Tizen). Elle se pilote entièrement à la télécommande.</p></div>
+            <div class="card"><div class="n">2</div><b>Une page parents</b><p>Une page web hébergée gratuitement. Les commandes passent par un canal de messages privé entre le téléphone et la TV.</p></div>
+            <div class="card"><div class="n">3</div><b>Fait maison</b><p>Codée sur mesure pour la famille, avec l’aide de Claude, une IA, et enrichie au fil des envies des enfants.</p></div>
+        </div>
+    </section>
+</main>
+
+<footer>Grumeaux App · un projet de famille</footer>
+
+<div class="zoom" id="zoom" hidden><img id="zoomImg" alt=""></div>
+
+<script>
+(function () {
+    'use strict';
+    var zoom = document.getElementById('zoom'), img = document.getElementById('zoomImg');
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('shot')) { img.src = e.target.src; img.alt = e.target.alt; zoom.hidden = false; }
+        else if (!zoom.hidden) zoom.hidden = true;
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') zoom.hidden = true; });
+})();
+</script>
+</body>
+</html>
